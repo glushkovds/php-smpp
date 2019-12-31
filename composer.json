@@ -1,0 +1,32 @@
+{
+  "name": "glushkovds/php-smpp",
+  "description": "Implementation SMPP v3.4 protocol. Includes sending and listening USSD.",
+  "keywords": [
+    "smpp",
+    "php",
+    "lib"
+  ],
+  "homepage": "https://github.com/glushkovds/php-smpp",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Denis Glushkov",
+      "email": "amkarovec@gmail.com",
+      "homepage": "https://github.com/glushkovds"
+    }
+  ],
+  "require": {
+    "php": ">=7.1.0",
+    "ext-sockets": "*"
+  },
+  "require-dev": {
+  },
+  "suggest": {
+  },
+  "autoload": {
+    "psr-0": {
+      "PhpSmpp": "src/"
+    }
+  }
+}
