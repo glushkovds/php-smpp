@@ -282,6 +282,8 @@ class SmppClient
             if ($pdu->id == $command_id) {
                 //remove response
                 array_splice($this->pdu_queue, $i, 1);
+                $response = new SmppPdu(SMPP::DELIVER_SM_RESP, SMPP::ESME_ROK, $pdu->sequence, "\x00");
+                $this->sendPDU($response);
                 return $this->parseSMS($pdu);
             }
         }
@@ -289,8 +291,8 @@ class SmppClient
         do {
             $pdu = $this->readPDU();
             if ($pdu === false) {
-                return false;
-            } // TSocket v. 0.6.0+ returns false on timeout
+                return false; // TSocket v. 0.6.0+ returns false on timeout
+            }
             //check for enquire link command
             if ($pdu->id == SMPP::ENQUIRE_LINK) {
                 $response = new SmppPdu(SMPP::ENQUIRE_LINK_RESP, SMPP::ESME_ROK, $pdu->sequence, "\x00");
@@ -301,6 +303,8 @@ class SmppClient
         } while ($pdu && $pdu->id != $command_id);
 
         if ($pdu) {
+            $response = new SmppPdu(SMPP::DELIVER_SM_RESP, SMPP::ESME_ROK, $pdu->sequence, "\x00");
+            $this->sendPDU($response);
             return $this->parseSMS($pdu);
         }
         return false;
