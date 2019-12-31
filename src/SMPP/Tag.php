@@ -2,11 +2,13 @@
 
 namespace PhpSmpp\SMPP;
 
+use PhpSmpp\SMPP\Exception\SmppException;
+
 /**
  * Primitive class to represent SMPP optional params, also know as TLV (Tag-Length-Value) params
  * @author hd@onlinecity.dk
  */
-class SmppTag
+class Tag
 {
     public $id;
     public $length;
@@ -58,6 +60,13 @@ class SmppTag
     const ITS_REPLY_TYPE = 0x1380;
     const ITS_SESSION_INFO = 0x1383;
 
+    /** @var int Legacy required parameter from v1.13 */
+    const USSD_SESSION_ID = 0x1501;
+
+    const ID_PARAMS = [
+        self::USSD_SERVICE_OP => ['length' => 1, 'type' => 'c'],
+        self::USSD_SESSION_ID => ['length' => 4, 'type' => 'a*'],
+    ];
 
     /**
      * Construct a new TLV param.
@@ -83,5 +92,20 @@ class SmppTag
     public function getBinary()
     {
         return pack('nn' . $this->type, $this->id, ($this->length ? $this->length : strlen($this->value)), $this->value);
+    }
+
+    /**
+     * Build Tag with predefined params
+     * @param string $id
+     * @param string $value
+     * @return Tag
+     */
+    public static function build($id, $value)
+    {
+        $params = static::ID_PARAMS[$id] ?? null;
+        if (empty($params)) {
+            throw new SmppException("Has no predefined params for $id");
+        }
+        return new static($id, $value, ...$params);
     }
 }

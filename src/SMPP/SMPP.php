@@ -8,6 +8,19 @@ namespace PhpSmpp\SMPP;
  */
 class SMPP
 {
+
+    const SERVICE_TYPE_DEFAULT = '';
+    const SERVICE_TYPE_USSD = 'USSD';
+
+    const USSD_SERVICE_OP_PSSD_IND = 0;
+    const USSD_SERVICE_OP_PSSR_IND = 1;
+    const USSD_SERVICE_OP_USSR_REQUEST = 2;
+    const USSD_SERVICE_OP_USSN_REQUEST = 3;
+    const USSD_SERVICE_OP_PSSD_RESPONSE = 16;
+    const USSD_SERVICE_OP_PSSR_RESPONSE = 17;
+    const USSD_SERVICE_OP_USSR_CONFIRM = 18;
+    const USSD_SERVICE_OP_USSN_CONFIRM = 19;
+
     // Command ids - SMPP v3.4 - 5.1.2.1 page 110-111
     const GENERIC_NACK = 0x80000000;
     const BIND_RECEIVER = 0x00000001;
@@ -147,6 +160,7 @@ class SMPP
     const DATA_CODING_ISO2022_JP = 10; // Music codes
     const DATA_CODING_KANJI = 13; // Extended Kanji JIS
     const DATA_CODING_KSC5601 = 14;
+    const DATA_CODING_UCS2_USSD = 72;
 
     // SMPP v3.4 - 5.2.25 page 129
     const DEST_FLAG_SME = 1;

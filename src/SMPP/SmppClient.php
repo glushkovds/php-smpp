@@ -3,7 +3,6 @@
 namespace PhpSmpp\SMPP;
 
 use PhpSmpp\Transport\SocketTransport;
-use PhpSmpp\SMPP\SMPP;
 use PhpSmpp\SMPP\Unit\SmppPdu;
 use PhpSmpp\SMPP\Unit\SmppSms;
 use PhpSmpp\SMPP\Unit\SmppDeliveryReceipt;
@@ -15,24 +14,22 @@ use PhpSmpp\SMPP\Exception\SmppException;
  * The purpose is to create a lightweight and simplified SMPP client.
  *
  * @author hd@onlinecity.dk, paladin
+ * @author amkarovec@gmail.com Denis Glushkov
  * @see http://en.wikipedia.org/wiki/Short_message_peer-to-peer_protocol - SMPP 3.4 protocol specification
- * Derived from work done by paladin, see: http://sourceforge.net/projects/phpsmppapi/
+ * Derived from https://github.com/onlinecity/php-smpp
  *
+ * Copyright (C) 2019 Denis Glushkov
  * Copyright (C) 2011 OnlineCity
  * Copyright (C) 2006 Paladin
  *
- * This library is free software; you can redistribute it and/or modify it under the terms of
- * the GNU Lesser General Public License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU Lesser General Public License for more details.
- *
- * This license can be read at: http://www.opensource.org/licenses/lgpl-2.1.php
  */
 class SmppClient
 {
+
+    const BIND_MODE_RECEIVER = 'receiver';
+    const BIND_MODE_TRANSMITTER = 'transmitter';
+    const BIND_MODE_TRANSCEIVER = 'transceiver';
+
     // SMPP bind parameters
     public static $system_type = "WWW";
     public static $interface_version = 0x34;
@@ -110,7 +107,7 @@ class SmppClient
     }
 
     /**
-     * Binds the receiver. One object can be bound only as receiver or only as trancmitter.
+     * Binds the receiver.
      * @param string $login - ESME system_id
      * @param string $pass - ESME password
      * @return bool
@@ -118,26 +115,13 @@ class SmppClient
      */
     public function bindReceiver($login, $pass)
     {
-        if (!$this->transport->isOpen()) {
-            return false;
-        }
-        if ($this->debug) {
-            call_user_func($this->debugHandler, 'Binding receiver...');
-        }
-
-        $response = $this->_bind($login, $pass, SMPP::BIND_RECEIVER);
-
-        if ($this->debug) {
-            call_user_func($this->debugHandler, "Binding status  : " . $response->status);
-        }
-        $this->mode = 'receiver';
-        $this->login = $login;
-        $this->pass = $pass;
+        $this->mode = static::BIND_MODE_RECEIVER;
+        $this->_bind($login, $pass, SMPP::BIND_RECEIVER);
         return true;
     }
 
     /**
-     * Binds the transmitter. One object can be bound only as receiver or only as trancmitter.
+     * Binds the transmitter.
      * @param string $login - ESME system_id
      * @param string $pass - ESME password
      * @return bool
@@ -145,21 +129,22 @@ class SmppClient
      */
     public function bindTransmitter($login, $pass)
     {
-        if (!$this->transport->isOpen()) {
-            return false;
-        }
-        if ($this->debug) {
-            call_user_func($this->debugHandler, 'Binding transmitter...');
-        }
+        $this->mode = static::BIND_MODE_TRANSMITTER;
+        $this->_bind($login, $pass, SMPP::BIND_TRANSMITTER);
+        return true;
+    }
 
-        $response = $this->_bind($login, $pass, SMPP::BIND_TRANSMITTER);
-
-        if ($this->debug) {
-            call_user_func($this->debugHandler, "Binding status  : " . $response->status);
-        }
-        $this->mode = 'transmitter';
-        $this->login = $login;
-        $this->pass = $pass;
+    /**
+     * Binds the transceiver.
+     * @param string $login - ESME system_id
+     * @param string $pass - ESME password
+     * @return bool
+     * @throws SmppException
+     */
+    public function bindTransceiver($login, $pass)
+    {
+        $this->mode = static::BIND_MODE_TRANSCEIVER;
+        $this->_bind($login, $pass, SMPP::BIND_TRANSCEIVER);
         return true;
     }
 
@@ -282,8 +267,6 @@ class SmppClient
             if ($pdu->id == $command_id) {
                 //remove response
                 array_splice($this->pdu_queue, $i, 1);
-                $response = new SmppPdu(SMPP::DELIVER_SM_RESP, SMPP::ESME_ROK, $pdu->sequence, "\x00");
-                $this->sendPDU($response);
                 return $this->parseSMS($pdu);
             }
         }
@@ -303,8 +286,6 @@ class SmppClient
         } while ($pdu && $pdu->id != $command_id);
 
         if ($pdu) {
-            $response = new SmppPdu(SMPP::DELIVER_SM_RESP, SMPP::ESME_ROK, $pdu->sequence, "\x00");
-            $this->sendPDU($response);
             return $this->parseSMS($pdu);
         }
         return false;
@@ -373,7 +354,7 @@ class SmppClient
         // Deal with CSMS
         if ($doCsms) {
             if (self::$csms_method == SmppClient::CSMS_PAYLOAD) {
-                $payload = new SmppTag(SmppTag::MESSAGE_PAYLOAD, $message, $msg_length);
+                $payload = new Tag(Tag::MESSAGE_PAYLOAD, $message, $msg_length);
                 return $this->submit_sm($from, $to, null, (empty($tags) ? array($payload) : array_merge($tags, $payload)), $dataCoding, $priority, $scheduleDeliveryTime, $validityPeriod);
             } else if (self::$csms_method == SmppClient::CSMS_8BIT_UDH) {
                 $seqnum = 1;
@@ -384,11 +365,11 @@ class SmppClient
                 }
                 return $res;
             } else {
-                $sar_msg_ref_num = new SmppTag(SmppTag::SAR_MSG_REF_NUM, $csmsReference, 2, 'n');
-                $sar_total_segments = new SmppTag(SmppTag::SAR_TOTAL_SEGMENTS, count($parts), 1, 'c');
+                $sar_msg_ref_num = new Tag(Tag::SAR_MSG_REF_NUM, $csmsReference, 2, 'n');
+                $sar_total_segments = new Tag(Tag::SAR_TOTAL_SEGMENTS, count($parts), 1, 'c');
                 $seqnum = 1;
                 foreach ($parts as $part) {
-                    $sartags = array($sar_msg_ref_num, $sar_total_segments, new SmppTag(SmppTag::SAR_SEGMENT_SEQNUM, $seqnum, 1, 'c'));
+                    $sartags = array($sar_msg_ref_num, $sar_total_segments, new Tag(Tag::SAR_SEGMENT_SEQNUM, $seqnum, 1, 'c'));
                     $res = $this->submit_sm($from, $to, $part, (empty($tags) ? $sartags : array_merge($tags, $sartags)), $dataCoding, $priority, $scheduleDeliveryTime, $validityPeriod);
                     $seqnum++;
                 }
@@ -547,6 +528,16 @@ class SmppClient
      */
     protected function _bind($login, $pass, $command_id)
     {
+        $this->login = null;
+        $this->pass = null;
+
+        if (!$this->transport->isOpen()) {
+            return false;
+        }
+        if ($this->debug) {
+            call_user_func($this->debugHandler, "Binding $this->mode...");
+        }
+
         // Make PDU body
         $pduBody = pack(
             'a' . (strlen($login) + 1) .
@@ -559,10 +550,17 @@ class SmppClient
         );
 
         $response = $this->sendCommand($command_id, $pduBody);
+
+        if ($this->debug) {
+            call_user_func($this->debugHandler, "Binding status  : " . $response->status);
+        }
+
         if ($response->status != SMPP::ESME_ROK) {
             throw new SmppException(SMPP::getStatusMessage($response->status), $response->status);
         }
 
+        $this->login = $login;
+        $this->pass = $pass;
         return $response;
     }
 
@@ -863,7 +861,7 @@ class SmppClient
 
     /**
      * @param $ar
-     * @return bool|SmppTag
+     * @return bool|Tag
      */
     protected function parseTag(&$ar)
     {
@@ -877,7 +875,7 @@ class SmppClient
         }
 
         $value = $this->getOctets($ar, $length);
-        $tag = new SmppTag($id, $value, $length);
+        $tag = new Tag($id, $value, $length);
         if ($this->debug) {
             call_user_func($this->debugHandler, "Parsed tag:");
             call_user_func($this->debugHandler, " id     :0x" . dechex($tag->id));
@@ -885,5 +883,87 @@ class SmppClient
             call_user_func($this->debugHandler, " value  :" . chunk_split(bin2hex($tag->value), 2, " "));
         }
         return $tag;
+    }
+
+    /**
+     * Extended version of submit_sm.
+     * Allows to send USSD
+     *
+     * @param string $serviceType
+     * @param SmppAddress $source
+     * @param SmppAddress $destination
+     * @param string $short_message
+     * @param Tag[] $tags
+     * @param integer $dataCoding
+     * @param integer $priority
+     * @param string $scheduleDeliveryTime
+     * @param string $validityPeriod
+     * @param string $esmClass
+     * @return string message id
+     */
+    protected function submit_sm_ex(
+        $serviceType,
+        SmppAddress $source,
+        SmppAddress $destination,
+        $short_message = null,
+        $tags = null,
+        $dataCoding = SMPP::DATA_CODING_DEFAULT,
+        $priority = 0x00,
+        $scheduleDeliveryTime = null,
+        $validityPeriod = null,
+        $esmClass = null
+    )
+    {
+        if (is_null($esmClass)) {
+            $esmClass = self::$sms_esm_class;
+        }
+        $serviceTypeLen = strlen($serviceType) + 1;
+        // Construct PDU with mandatory fields
+        $pdu = pack(
+            "a{$serviceTypeLen}cca" . (strlen($source->value) + 1)
+            . 'cca' . (strlen($destination->value) + 1)
+            . 'ccc' . ($scheduleDeliveryTime ? 'a16x' : 'a1') . ($validityPeriod ? 'a16x' : 'a1')
+            . 'ccccca' . (strlen($short_message) + (self::$sms_null_terminate_octetstrings ? 1 : 0)),
+            $serviceType,
+            $source->ton,
+            $source->npi,
+            $source->value,
+            $destination->ton,
+            $destination->npi,
+            $destination->value,
+            $esmClass,
+            self::$sms_protocol_id,
+            $priority,
+            $scheduleDeliveryTime,
+            $validityPeriod,
+            self::$sms_registered_delivery_flag,
+            self::$sms_replace_if_present_flag,
+            $dataCoding,
+            self::$sms_sm_default_msg_id,
+            strlen($short_message) + (self::$sms_null_terminate_octetstrings ? 1 : 0),//sm_length
+            $short_message//short_message
+        );
+
+        // Add any tags
+        if (!empty($tags)) {
+            foreach ($tags as $tag) {
+                $pdu .= $tag->getBinary();
+            }
+        }
+        if ($this->debug) {
+            $savepdu = chunk_split(bin2hex($pdu), 2, " ");
+            call_user_func($this->debugHandler, "PDU hex: $savepdu");
+        }
+        $response = $this->sendCommand(SMPP::SUBMIT_SM, $pdu);
+        $body = unpack("a*msgid", $response->body);
+        return $body['msgid'];
+    }
+
+    public function sendUSSD(SmppAddress $from, SmppAddress $to, $message, $tags, $dataCoding)
+    {
+        return $this->submit_sm_ex(
+            SMPP::SERVICE_TYPE_USSD, $from, $to, $message, $tags, $dataCoding,
+            0x00, null, null, SMPP::ESM_SUBMIT_MODE_STOREANDFORWARD
+        );
     }
 }
