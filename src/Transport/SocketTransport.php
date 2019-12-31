@@ -203,7 +203,7 @@ class SocketTransport
 	 * @param integer $millisec
 	 * @return array
 	 */
-	private function millisecToSolArray($millisec)
+	protectedfunction millisecToSolArray($millisec)
 	{
 		$usec = $millisec*1000;
 		return array('sec' => floor($usec/1000000), 'usec' => $usec%1000000);
