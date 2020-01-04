@@ -701,13 +701,19 @@ class SmppClient
      */
     protected function sendCommand($id, $pduBody)
     {
-        if (!$this->transport->isOpen()) return false;
+        if (!$this->transport->isOpen()) {
+            return false;
+        }
         $pdu = new SmppPdu($id, 0, $this->sequence_number, $pduBody);
         $this->sendPDU($pdu);
         $response = $this->readPDU_resp($this->sequence_number, $pdu->id);
-        if ($response === false) throw new SmppException('Failed to read reply to command: 0x' . dechex($id));
+        if ($response === false) {
+            throw new SmppException('Failed to read reply to command: 0x' . dechex($id));
+        }
 
-        if ($response->status != SMPP::ESME_ROK) throw new SmppException(SMPP::getStatusMessage($response->status), $response->status);
+        if ($response->status != SMPP::ESME_ROK) {
+            throw new SmppException(SMPP::getStatusMessage($response->status), $response->status);
+        }
 
         $this->sequence_number++;
 
@@ -756,8 +762,8 @@ class SmppClient
         for ($i = 0; $i < $ql; $i++) {
             $pdu = $this->pdu_queue[$i];
             if (
-                ($pdu->sequence == $seq_number && ($pdu->id == $command_id || $pdu->id == SMPP::GENERIC_NACK)) ||
-                ($pdu->sequence == null && $pdu->id == SMPP::GENERIC_NACK)
+                ($pdu->sequence == $seq_number && ($pdu->id == $command_id || $pdu->id == SMPP::GENERIC_NACK))
+                || ($pdu->sequence == null && $pdu->id == SMPP::GENERIC_NACK)
             ) {
                 // remove response pdu from queue
                 array_splice($this->pdu_queue, $i, 1);
@@ -769,8 +775,12 @@ class SmppClient
         do {
             $pdu = $this->readPDU();
             if ($pdu) {
-                if ($pdu->sequence == $seq_number && ($pdu->id == $command_id || $pdu->id == SMPP::GENERIC_NACK)) return $pdu;
-                if ($pdu->sequence == null && $pdu->id == SMPP::GENERIC_NACK) return $pdu;
+                if ($pdu->sequence == $seq_number && ($pdu->id == $command_id || $pdu->id == SMPP::GENERIC_NACK)) {
+                    return $pdu;
+                }
+                if ($pdu->sequence == null && $pdu->id == SMPP::GENERIC_NACK) {
+                    return $pdu;
+                }
                 array_push($this->pdu_queue, $pdu); // unknown PDU push to queue
             }
         } while ($pdu);
