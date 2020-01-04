@@ -51,7 +51,7 @@ class SmppClient
      * Switch to toggle this feature
      * @var boolean
      */
-    public static $sms_null_terminate_octetstrings = true;
+    public static $sms_null_terminate_octetstrings = false;
 
     /**
      * Use sar_msg_ref_num and sar_total_segments with 16 bit tags
@@ -408,7 +408,9 @@ class SmppClient
         $esmClass = null
     )
     {
-        if (is_null($esmClass)) $esmClass = self::$sms_esm_class;
+        if (is_null($esmClass)) {
+            $esmClass = self::$sms_esm_class;
+        }
 
         // Construct PDU with mandatory fields
         $pdu = pack(
