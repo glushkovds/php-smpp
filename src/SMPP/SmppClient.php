@@ -355,12 +355,18 @@ class SmppClient
         if ($doCsms) {
             if (self::$csms_method == SmppClient::CSMS_PAYLOAD) {
                 $payload = new Tag(Tag::MESSAGE_PAYLOAD, $message, $msg_length);
-                return $this->submit_sm($from, $to, null, (empty($tags) ? array($payload) : array_merge($tags, $payload)), $dataCoding, $priority, $scheduleDeliveryTime, $validityPeriod);
-            } else if (self::$csms_method == SmppClient::CSMS_8BIT_UDH) {
+                return $this->submit_sm(
+                    $from, $to, null, (empty($tags) ? array($payload) : array_merge($tags, $payload)),
+                    $dataCoding, $priority, $scheduleDeliveryTime, $validityPeriod
+                );
+            } elseif (self::$csms_method == SmppClient::CSMS_8BIT_UDH) {
                 $seqnum = 1;
                 foreach ($parts as $part) {
                     $udh = pack('cccccc', 5, 0, 3, substr($csmsReference, 1, 1), count($parts), $seqnum);
-                    $res = $this->submit_sm($from, $to, $udh . $part, $tags, $dataCoding, $priority, $scheduleDeliveryTime, $validityPeriod, (SmppClient::$sms_esm_class | 0x40));
+                    $res = $this->submit_sm(
+                        $from, $to, $udh . $part, $tags, $dataCoding, $priority,
+                        $scheduleDeliveryTime, $validityPeriod, (SmppClient::$sms_esm_class | 0x40)
+                    );
                     $seqnum++;
                 }
                 return $res;
@@ -369,8 +375,11 @@ class SmppClient
                 $sar_total_segments = new Tag(Tag::SAR_TOTAL_SEGMENTS, count($parts), 1, 'c');
                 $seqnum = 1;
                 foreach ($parts as $part) {
-                    $sartags = array($sar_msg_ref_num, $sar_total_segments, new Tag(Tag::SAR_SEGMENT_SEQNUM, $seqnum, 1, 'c'));
-                    $res = $this->submit_sm($from, $to, $part, (empty($tags) ? $sartags : array_merge($tags, $sartags)), $dataCoding, $priority, $scheduleDeliveryTime, $validityPeriod);
+                    $sartags = [$sar_msg_ref_num, $sar_total_segments, new Tag(Tag::SAR_SEGMENT_SEQNUM, $seqnum, 1, 'c')];
+                    $res = $this->submit_sm(
+                        $from, $to, $part, (empty($tags) ? $sartags : array_merge($tags, $sartags)),
+                        $dataCoding, $priority, $scheduleDeliveryTime, $validityPeriod
+                    );
                     $seqnum++;
                 }
                 return $res;
