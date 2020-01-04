@@ -432,7 +432,7 @@ class SmppClient
             self::$sms_replace_if_present_flag,
             $dataCoding,
             self::$sms_sm_default_msg_id,
-            strlen($short_message),//sm_length
+            strlen($short_message) + (self::$sms_null_terminate_octetstrings ? 1 : 0),//sm_length
             $short_message//short_message
         );
 
