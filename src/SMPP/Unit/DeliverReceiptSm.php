@@ -30,7 +30,8 @@ class DeliverReceiptSm extends DeliverSm
     {
         $numMatches = preg_match('/done date:(\d{10,12})/si', $this->shortMessage, $matches);
         if ($numMatches == 0) {
-            Logger::debug('Could not parse delivery receipt: ' . $this->message . "\n" . bin2hex($this->body));
+            Logger::debug('Could not parse delivery receipt: ' . $this->shortMessage . "\n" . bin2hex($this->body));
+            return;
         }
         $dp = str_split($matches[1], 2);
         $dd = gmmktime($dp[3], $dp[4], isset($dp[5]) ? $dp[5] : 0, $dp[1], $dp[2], $dp[0]);
@@ -39,12 +40,14 @@ class DeliverReceiptSm extends DeliverSm
 
     protected function parseError()
     {
-        $numMatches = preg_match('/edd:(\d+)/si', $this->shortMessage, $matches);
+        $numMatches = preg_match('/err:(\d+)/si', $this->shortMessage, $matches);
         if ($numMatches == 0) {
-            Logger::debug('Could not parse error code: ' . $this->message . "\n" . bin2hex($this->body));
+            Logger::debug('Could not parse error code: ' . $this->shortMessage . "\n" . bin2hex($this->body));
+            return;
         }
         $this->receiptErrorCode = (int)$matches[1];
         // TODO
         $this->receiptErrorText = "Code:$this->receiptErrorCode";
     }
+
 }
