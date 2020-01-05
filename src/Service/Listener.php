@@ -15,10 +15,15 @@ class Listener extends Service
     public function listen(Callable $callback)
     {
         while (true) {
-            $this->enshureConnection();
-            $this->client->listenSm($callback);
+            $this->listenOnce($callback);
             usleep(10e4);
         }
+    }
+
+    public function listenOnce(Callable $callback)
+    {
+        $this->enshureConnection();
+        $this->client->listenSm($callback);
     }
 
 }
