@@ -29,6 +29,9 @@ abstract class Sm extends SmppPdu
         return $sm;
     }
 
+    /**
+     * @return SmppPdu
+     */
     public function buildResp()
     {
         $id = SMPP::DELIVER_SM_RESP;

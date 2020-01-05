@@ -15,10 +15,19 @@ use PhpSmpp\SMPP\Unit\SubmitSm;
 class PduParser
 {
 
+    public static function isSm(SmppPdu $pdu)
+    {
+        return in_array($pdu->id, [SMPP::DELIVER_SM, SMPP::SUBMIT_SM]);
+    }
+
+    /**
+     * @param SmppPdu $pdu
+     * @return Sm
+     */
     public static function fromPdu(SmppPdu $pdu)
     {
         // Check command id
-        if (!in_array($pdu->id, [SMPP::DELIVER_SM, SMPP::SUBMIT_SM])) {
+        if (!static::isSm($pdu)) {
             throw new \InvalidArgumentException('PDU is not an SMS');
         }
 

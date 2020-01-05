@@ -15,7 +15,7 @@ class DeliverReceiptSm extends DeliverSm
     {
         foreach ($this->tags as $tag) {
             if (Tag::MESSAGE_STATE == $tag->id) {
-                $this->state = $tag->value;
+                $this->state = (int)bin2hex($tag->value);
             }
         }
     }

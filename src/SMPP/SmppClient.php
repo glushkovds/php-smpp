@@ -2,11 +2,14 @@
 
 namespace PhpSmpp\SMPP;
 
+use PhpSmpp\Logger;
+use PhpSmpp\PduParser;
 use PhpSmpp\Transport\SocketTransport;
 use PhpSmpp\SMPP\Unit\SmppPdu;
 use PhpSmpp\SMPP\Unit\SmppSms;
 use PhpSmpp\SMPP\Unit\SmppDeliveryReceipt;
 use PhpSmpp\SMPP\Exception\SmppException;
+use PhpSmpp\Transport\Transport;
 
 /**
  * Class for receiving or sending sms through SMPP protocol.
@@ -82,11 +85,17 @@ class SmppClient
 
     // Used for reconnect
     protected $mode;
+
+    /** @var array */
+    protected $hosts;
     protected $login;
     protected $pass;
 
     protected $sequence_number;
     protected $sar_msg_ref_num;
+
+    /** @var Callable */
+    protected $readSmsCallback;
 
     /**
      * Construct the SMPP class
@@ -94,16 +103,31 @@ class SmppClient
      * @param SocketTransport $transport
      * @param string $debugHandler
      */
-    public function __construct(SocketTransport $transport, $debugHandler = null)
+    public function __construct($hosts)
     {
+        $this->hosts = $hosts;
+
         // Internal parameters
         $this->sequence_number = 1;
         $this->debug = false;
-        $this->pdu_queue = array();
+        $this->pdu_queue = [];
 
-        $this->transport = $transport;
-        $this->debugHandler = $debugHandler ? $debugHandler : 'error_log';
+        $this->debugHandler = 'error_log';
         $this->mode = null;
+    }
+
+    public function getTransport()
+    {
+        if (empty($this->transport)) {
+            $this->transport = new SocketTransport($this->hosts, [2775]);
+            $this->transport->setRecvTimeout(10000);
+        }
+        return $this->transport;
+    }
+
+    public function setTransport(Transport $transport)
+    {
+        $this->transport = $transport;
     }
 
     /**
@@ -146,6 +170,15 @@ class SmppClient
         $this->mode = static::BIND_MODE_TRANSCEIVER;
         $this->_bind($login, $pass, SMPP::BIND_TRANSCEIVER);
         return true;
+    }
+
+    /**
+     * Set callback handler for Sm, when it arrived
+     * @param Callable $callback param is Sm object
+     */
+    public function setListener(Callable $callback)
+    {
+        $this->readSmsCallback = $callback;
     }
 
     /**
@@ -250,6 +283,37 @@ class SmppClient
         $data['final_date'] = $data['final_date'] ? $this->parseSmppTime(trim($data['final_date'])) : null;
         $status = unpack("cmessage_state/cerror_code", substr($reply->body, $posDate + 1));
         return array_merge($data, $status);
+    }
+
+    protected function handleNonSmPdu(SmppPdu $pdu)
+    {
+        if ($pdu->id == SMPP::ENQUIRE_LINK) {
+            $response = new SmppPdu(SMPP::ENQUIRE_LINK_RESP, SMPP::ESME_ROK, $pdu->sequence, "\x00");
+            $this->sendPDU($response);
+        }
+    }
+
+    public function listenSm(Callable $callback)
+    {
+        do {
+            $pdu = $this->readPDU_ex();
+            if ($pdu === false) {
+                return;
+            }
+            if (PduParser::isSm($pdu)) {
+                try {
+                    $sm = PduParser::fromPdu($pdu);
+                    $this->sendPDU($sm->buildResp());
+                } catch (\Throwable $e) {
+                    Logger::debug('Failed parse pdu: ' . $e->getMessage() . ' ' . print_r($pdu, true));
+                    usleep(10e4);
+                    continue;
+                }
+                $callback($sm);
+                continue;
+            }
+            $this->handleNonSmPdu($pdu);
+        } while ($pdu);
     }
 
     /**
@@ -784,7 +848,7 @@ class SmppClient
 
         // Read PDUs until the one we are looking for shows up, or a generic nack pdu with matching sequence or null sequence
         do {
-            $pdu = $this->readPDU();
+            $pdu = $this->readPDU_ex();
             if ($pdu) {
                 if ($pdu->sequence == $seq_number && ($pdu->id == $command_id || $pdu->id == SMPP::GENERIC_NACK)) {
                     return $pdu;
@@ -796,6 +860,41 @@ class SmppClient
             }
         } while ($pdu);
         return false;
+    }
+
+    protected function readPDU_ex()
+    {
+        $bin = $this->transport->readPDU();
+        // Read PDU length
+        $bufLength = substr($bin, 0, 4);
+        if (!$bufLength) {
+            return false;
+        }
+        extract(unpack("Nlength", $bufLength));
+
+        // Read PDU headers
+        $bufHeaders = substr($bin, 4, 12);
+        if (!$bufHeaders) {
+            return false;
+        }
+        extract(unpack("Ncommand_id/Ncommand_status/Nsequence_number", $bufHeaders));
+
+        // Read PDU body
+        if ($length - 16 > 0) {
+            $body = substr($bin, 16);
+            if (!$body) throw new \RuntimeException('Could not read PDU body');
+        } else {
+            $body = null;
+        }
+        $pdu = new SmppPdu($command_id, $command_status, $sequence_number, $body);
+
+        Logger::debug("Read PDU         : $length bytes");
+        Logger::debug(' ' . chunk_split(bin2hex($bufLength . $bufHeaders . $body), 2, " "));
+        Logger::debug(" command id      : 0x" . dechex($command_id));
+        Logger::debug(" command status  : 0x" . dechex($command_status) . " " . SMPP::getStatusMessage($command_status));
+        Logger::debug(' sequence number : ' . $sequence_number);
+
+        return $pdu;
     }
 
     /**
