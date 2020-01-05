@@ -3,6 +3,7 @@
 namespace PhpSmpp\Service;
 
 
+use PhpSmpp\Logger;
 use PhpSmpp\SMPP\SmppClient;
 
 abstract class Service
@@ -23,6 +24,7 @@ abstract class Service
         $this->login = $login;
         $this->pass = $pass;
         $this->debug = $debug;
+        Logger::$enabled = $debug;
         $this->initClient();
     }
 

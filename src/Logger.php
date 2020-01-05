@@ -9,6 +9,9 @@ class Logger
 
     public static function debug($mixed)
     {
+        if (!static::$enabled) {
+            return;
+        }
         echo $mixed . "\n";
     }
 }
