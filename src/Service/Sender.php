@@ -4,37 +4,34 @@
 namespace PhpSmpp\Service;
 
 
+use PhpSmpp\Helper;
+use PhpSmpp\Logger;
+use PhpSmpp\SMPP\SMPP;
+use PhpSmpp\SMPP\SmppAddress;
+
 class Sender extends Service
 {
-    /**
-     * Максимальное кол-во попыток отправки СМС
-     *
-     * @var integer
-     */
-    public $retriesCount = 3;
+    /** @var int */
+    public $retriesCount = 2;
 
-    /**
-     * Задержка в секундах перед следующей попыткой отправки СМС
-     *
-     * @var integer
-     */
+    /** @var int */
     public $delayBetweenAttempts = 2;
 
     public function bind()
     {
         $this->openConnection();
-        $this->client->bindTransmitter($this->login, $this->password);
+        $this->client->bindTransmitter($this->login, $this->pass);
     }
 
     public function send($phone, $message, $from)
     {
         $this->enshureConnection();
-        $from = new SmppAddress($from, \OnlineCity\SMPP\SMPP::TON_ALPHANUMERIC);
+        $from = new SmppAddress($from, SMPP::TON_ALPHANUMERIC);
         $to = new SmppAddress((int)$phone, SMPP::TON_INTERNATIONAL, SMPP::NPI_E164);
 
         $encodedMessage = $message;
         $dataCoding = SMPP::DATA_CODING_DEFAULT;
-        if (SMS::hasUTFChars($message)) {
+        if (Helper::hasUTFChars($message)) {
             $encodedMessage = iconv('UTF-8', 'UCS-2BE', $message);
             $dataCoding = SMPP::DATA_CODING_UCS2;
         }
@@ -46,8 +43,7 @@ class Sender extends Service
             try {
                 $smsId = $this->client->sendSMS($from, $to, $encodedMessage, null, $dataCoding);
             } catch (\Throwable $e) {
-                \Yii::info("Got error while sending SMS. Retry=$i", SMS::LOG_CATEGORY);
-                \Yii::info($e, SMS::LOG_CATEGORY);
+                Logger::debug("Got error while sending SMS. Retry=$i");
                 $this->unbind();
                 $this->enshureConnection();
                 $lastError = $e;
@@ -60,7 +56,8 @@ class Sender extends Service
 
         if (empty($smsId)) {
             $error = $lastError ?? new \Error("SMPP: no smsc answer");
-            Yii::error($error, SMS::LOG_CATEGORY);
+//            Logger::debug(print_r($error, true));
+            Logger::debug($error->getMessage());
             throw $error;
         }
 
@@ -79,8 +76,12 @@ class Sender extends Service
         $this->enshureConnection();
         $from = new SmppAddress($from, SMPP::TON_UNKNOWN, SMPP::NPI_E164);
         $to = new SmppAddress((int)$phone, SMPP::TON_INTERNATIONAL, SMPP::NPI_E164);
-        $encodedMessage = iconv('UTF-8', 'UCS-2BE', $message);
-        $dataCoding = $encodedMessage === $message ? SMPP::DATA_CODING_DEFAULT : SMPP::DATA_CODING_UCS2_USSD;
+        $encodedMessage = $message;
+        $dataCoding = SMPP::DATA_CODING_DEFAULT;
+        if (Helper::hasUTFChars($message)) {
+            $encodedMessage = iconv('UTF-8', 'UCS-2BE', $message);
+            $dataCoding = SMPP::DATA_CODING_UCS2;
+        }
         $smsId = $this->client->sendUSSD($from, $to, $encodedMessage, $tags, $dataCoding);
         return $smsId;
     }

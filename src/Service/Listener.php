@@ -9,7 +9,7 @@ class Listener extends Service
     public function bind()
     {
         $this->openConnection();
-        $this->client->bindReceiver($this->login, $this->password);
+        $this->client->bindReceiver($this->login, $this->pass);
     }
 
     public function listen(Callable $callback)

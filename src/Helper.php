@@ -50,4 +50,13 @@ class Helper
         return $s;
     }
 
+    /**
+     * @param string $message
+     * @return bool
+     */
+    public static function hasUTFChars($message)
+    {
+        return (bool)preg_match('/[А-Яа-яЁё]/u', $message);
+    }
+
 }

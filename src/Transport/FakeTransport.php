@@ -36,7 +36,6 @@ class FakeTransport implements Transport
     public function readPDU()
     {
         return array_shift($this->queue);
-        return null;
     }
 
     public function isOpen()

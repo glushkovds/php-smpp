@@ -39,6 +39,7 @@ abstract class Service
 
     protected function openConnection()
     {
+        $this->initClient();
         $this->client->getTransport()->debug = $this->debug;
         $this->client->getTransport()->open();
     }
@@ -46,7 +47,7 @@ abstract class Service
 
     public function unbind()
     {
-        $this->client = null;
+        $this->client->close();
     }
 
     /**
