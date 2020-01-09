@@ -393,7 +393,8 @@ class SmppClient
                     $udh = pack('cccccc', 5, 0, 3, substr($csmsReference, 1, 1), count($parts), $seqnum);
                     $res = $this->submit_sm(
                         $from, $to, $udh . $part, $tags, $dataCoding, $priority,
-                        $scheduleDeliveryTime, $validityPeriod, (SmppClient::$sms_esm_class | 0x40)
+                        $scheduleDeliveryTime, $validityPeriod, (SmppClient::$sms_esm_class | 0x40),
+                        $seqnum == count($parts)
                     );
                     $seqnum++;
                 }
@@ -442,7 +443,8 @@ class SmppClient
         $priority = 0x00,
         $scheduleDeliveryTime = null,
         $validityPeriod = null,
-        $esmClass = null
+        $esmClass = null,
+        $needReply = true
     )
     {
         if (is_null($esmClass)) {
@@ -482,9 +484,12 @@ class SmppClient
             }
         }
 
-        $response = $this->sendCommand(SMPP::SUBMIT_SM, $pdu);
-        $body = unpack("a*msgid", $response->body);
-        return $body['msgid'];
+        $response = $this->sendCommand(SMPP::SUBMIT_SM, $pdu, $needReply);
+        if ($needReply) {
+            $body = unpack("a*msgid", $response->body);
+            return $body['msgid'];
+        }
+        return null;
     }
 
     /**
@@ -668,20 +673,22 @@ class SmppClient
      * @param string $pduBody - PDU body
      * @return SmppPdu
      */
-    protected function sendCommand($id, $pduBody)
+    protected function sendCommand($id, $pduBody, $needReply = true)
     {
         if (!$this->transport->isOpen()) {
             return false;
         }
         $pdu = new SmppPdu($id, 0, $this->sequence_number, $pduBody);
         $this->sendPDU($pdu);
-        $response = $this->readPDU_resp($this->sequence_number, $pdu->id);
-        if ($response === false) {
-            throw new SmppException('Failed to read reply to command: 0x' . dechex($id));
-        }
+        if ($needReply) {
+            $response = $this->readPDU_resp($this->sequence_number, $pdu->id);
+            if ($response === false) {
+                throw new SmppException('Failed to read reply to command: 0x' . dechex($id));
+            }
 
-        if ($response->status != SMPP::ESME_ROK) {
-            throw new SmppException(SMPP::getStatusMessage($response->status), $response->status);
+            if ($response->status != SMPP::ESME_ROK) {
+                throw new SmppException(SMPP::getStatusMessage($response->status), $response->status);
+            }
         }
 
         $this->sequence_number++;
@@ -691,7 +698,7 @@ class SmppClient
             $this->reconnect();
         }
 
-        return $response;
+        return $needReply ? $response : null;
     }
 
     /**
