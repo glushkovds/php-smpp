@@ -346,6 +346,33 @@ class SocketTransport
         }
     }
 
+    public function readPDU()
+    {
+        // Read PDU length
+        $bufLength = $this->read(4);
+        if (!$bufLength) {
+            return null;
+        }
+        /** @var int $length */
+        extract(unpack("Nlength", $bufLength));
+
+        // Read PDU headers
+        $bufHeaders = $this->read(12);
+        if (!$bufHeaders) {
+            return null;
+        }
+
+        // Read PDU body
+        if ($length - 16 > 0) {
+            $body = $this->readAll($length - 16);
+            if (!$body) throw new \RuntimeException('Could not read PDU body');
+        } else {
+            $body = null;
+        }
+        return $bufLength . $bufHeaders . $body;
+    }
+
+
     /**
      * Write (all) data to the socket.
      * Timeout throws SocketTransportException

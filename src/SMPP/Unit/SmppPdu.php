@@ -28,4 +28,12 @@ class SmppPdu
 		$this->sequence = $sequence;
 		$this->body = $body;
 	}
+
+    public function getBinary()
+    {
+        $length = strlen($this->body) + 16;
+        $header = pack("NNNN", $length, $this->id, $this->status, $this->sequence);
+        return $header . $this->body;
+    }
+
 }
