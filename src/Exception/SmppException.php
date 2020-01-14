@@ -1,6 +1,6 @@
 <?php
 
-namespace PhpSmpp\SMPP\Exception;
+namespace PhpSmpp\Exception;
 
 class SmppException extends \RuntimeException
 {

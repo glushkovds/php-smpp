@@ -1,8 +1,8 @@
 <?php
 
-namespace PhpSmpp\SMPP\Unit;
+namespace PhpSmpp\Pdu;
 
-use PhpSmpp\SMPP\Unit\SmppSms;
+use PhpSmpp\Pdu\SmppSms;
 
 /**
  * An extension of a SMS, with data embedded into the message part of the SMS.

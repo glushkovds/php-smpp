@@ -1,12 +1,12 @@
 <?php
 
-namespace PhpSmpp\SMPP\Unit;
+namespace PhpSmpp\Pdu;
 
 /**
  * Primitive class for encapsulating PDUs
  * @author hd@onlinecity.dk
  */
-class SmppPdu
+class Pdu
 {
 	public $id;
 	public $status;

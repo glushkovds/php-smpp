@@ -1,6 +1,6 @@
 <?php
 
-namespace PhpSmpp\SMPP\Unit;
+namespace PhpSmpp\Pdu;
 
 
 class SubmitSm extends Sm

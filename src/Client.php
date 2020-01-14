@@ -1,14 +1,15 @@
 <?php
 
-namespace PhpSmpp\SMPP;
+namespace PhpSmpp;
 
 use PhpSmpp\Logger;
+use PhpSmpp\Pdu\Part\Address;
 use PhpSmpp\PduParser;
 use PhpSmpp\Transport\SocketTransport;
-use PhpSmpp\SMPP\Unit\SmppPdu;
-use PhpSmpp\SMPP\Unit\SmppSms;
-use PhpSmpp\SMPP\Unit\SmppDeliveryReceipt;
-use PhpSmpp\SMPP\Exception\SmppException;
+use PhpSmpp\Pdu\Pdu;
+use PhpSmpp\Pdu\SmppSms;
+use PhpSmpp\Pdu\SmppDeliveryReceipt;
+use PhpSmpp\Exception\SmppException;
 use PhpSmpp\Transport\Transport;
 
 /**
@@ -26,7 +27,7 @@ use PhpSmpp\Transport\Transport;
  * Copyright (C) 2006 Paladin
  *
  */
-class SmppClient
+class Client
 {
 
     const BIND_MODE_RECEIVER = 'receiver';
@@ -262,11 +263,11 @@ class SmppClient
      *    error_code depends on the telco network, so could be anything.
      *
      * @param string $messageid
-     * @param SmppAddress $source
+     * @param Address $source
      * @return array
      * @throws \Exception
      */
-    public function queryStatus($messageid, SmppAddress $source)
+    public function queryStatus($messageid, Address $source)
     {
         $pduBody = pack(
             'a' . (strlen($messageid) + 1) . 'cca' . (strlen($source->value) + 1),
@@ -288,10 +289,10 @@ class SmppClient
         return array_merge($data, $status);
     }
 
-    protected function handleNonSmPdu(SmppPdu $pdu)
+    protected function handleNonSmPdu(Pdu $pdu)
     {
         if ($pdu->id == SMPP::ENQUIRE_LINK) {
-            $response = new SmppPdu(SMPP::ENQUIRE_LINK_RESP, SMPP::ESME_ROK, $pdu->sequence, "\x00");
+            $response = new Pdu(SMPP::ENQUIRE_LINK_RESP, SMPP::ESME_ROK, $pdu->sequence, "\x00");
             $this->sendPDU($response);
         }
     }
@@ -325,8 +326,8 @@ class SmppClient
      * For correct handling of Concatenated SMS, message must be encoded with GSM 03.38 (data_coding 0x00) or UCS-2BE (0x08).
      * Concatenated SMS'es uses 16-bit reference numbers, which gives 152 GSM 03.38 chars or 66 UCS-2BE chars per CSMS.
      *
-     * @param SmppAddress $from
-     * @param SmppAddress $to
+     * @param Address $from
+     * @param Address $to
      * @param string $message
      * @param array $tags (optional)
      * @param integer $dataCoding (optional)
@@ -336,8 +337,8 @@ class SmppClient
      * @return string message id
      */
     public function sendSMS(
-        SmppAddress $from,
-        SmppAddress $to,
+        Address $from,
+        Address $to,
         $message,
         $tags = null,
         $dataCoding = SMPP::DATA_CODING_DEFAULT,
@@ -369,7 +370,7 @@ class SmppClient
         // Figure out if we need to do CSMS, since it will affect our PDU
         if ($msg_length > $singleSmsOctetLimit) {
             $doCsms = true;
-            if ($this->csmsMethod != SmppClient::CSMS_PAYLOAD) {
+            if ($this->csmsMethod != Client::CSMS_PAYLOAD) {
                 $parts = $this->splitMessageString($message, $csmsSplit, $dataCoding);
                 $short_message = reset($parts);
                 $csmsReference = $this->getCsmsReference();
@@ -381,19 +382,19 @@ class SmppClient
 
         // Deal with CSMS
         if ($doCsms) {
-            if ($this->csmsMethod == SmppClient::CSMS_PAYLOAD) {
+            if ($this->csmsMethod == Client::CSMS_PAYLOAD) {
                 $payload = new Tag(Tag::MESSAGE_PAYLOAD, $message, $msg_length);
                 return $this->submit_sm(
                     $from, $to, null, (empty($tags) ? array($payload) : array_merge($tags, $payload)),
                     $dataCoding, $priority, $scheduleDeliveryTime, $validityPeriod
                 );
-            } elseif ($this->csmsMethod == SmppClient::CSMS_8BIT_UDH) {
+            } elseif ($this->csmsMethod == Client::CSMS_8BIT_UDH) {
                 $seqnum = 1;
                 foreach ($parts as $part) {
                     $udh = pack('cccccc', 5, 0, 3, substr($csmsReference, 1, 1), count($parts), $seqnum);
                     $res = $this->submit_sm(
                         $from, $to, $udh . $part, $tags, $dataCoding, $priority,
-                        $scheduleDeliveryTime, $validityPeriod, (SmppClient::$sms_esm_class | 0x40),
+                        $scheduleDeliveryTime, $validityPeriod, (Client::$sms_esm_class | 0x40),
                         $seqnum == count($parts)
                     );
                     $seqnum++;
@@ -423,8 +424,8 @@ class SmppClient
      * Implemented as a protected method to allow automatic sms concatenation.
      * Tags must be an array of already packed and encoded TLV-params.
      *
-     * @param SmppAddress $source
-     * @param SmppAddress $destination
+     * @param Address $source
+     * @param Address $destination
      * @param string $short_message
      * @param array $tags
      * @param integer $dataCoding
@@ -435,8 +436,8 @@ class SmppClient
      * @return string message id
      */
     protected function submit_sm(
-        SmppAddress $source,
-        SmppAddress $destination,
+        Address $source,
+        Address $destination,
         $short_message = null,
         $tags = null,
         $dataCoding = SMPP::DATA_CODING_DEFAULT,
@@ -568,7 +569,7 @@ class SmppClient
      * @param string $login ESME system_id
      * @param string $pass ESME password
      * @param string $command_id
-     * @return SmppPdu
+     * @return Pdu
      */
     protected function bind($login, $pass, $command_id)
     {
@@ -610,7 +611,7 @@ class SmppClient
 
     /**
      * Send the enquire link command.
-     * @return SmppPdu
+     * @return Pdu
      */
     public function enquireLink()
     {
@@ -634,7 +635,7 @@ class SmppClient
             if ($pdu->id == SMPP::ENQUIRE_LINK) {
                 //remove response
                 array_splice($this->pdu_queue, $i, 1);
-                $this->sendPDU(new SmppPdu(SMPP::ENQUIRE_LINK_RESP, SMPP::ESME_ROK, $pdu->sequence, "\x00"));
+                $this->sendPDU(new Pdu(SMPP::ENQUIRE_LINK_RESP, SMPP::ESME_ROK, $pdu->sequence, "\x00"));
             }
         }
 
@@ -642,7 +643,7 @@ class SmppClient
         if ($this->transport->hasData()) {
             $pdu = $this->readPDU();
             if ($pdu->id == SMPP::ENQUIRE_LINK) {
-                $this->sendPDU(new SmppPdu(SMPP::ENQUIRE_LINK_RESP, SMPP::ESME_ROK, $pdu->sequence, "\x00"));
+                $this->sendPDU(new Pdu(SMPP::ENQUIRE_LINK_RESP, SMPP::ESME_ROK, $pdu->sequence, "\x00"));
             } elseif ($pdu) {
                 array_push($this->pdu_queue, $pdu);
             }
@@ -671,14 +672,14 @@ class SmppClient
      * Sends the PDU command to the SMSC and waits for response.
      * @param integer $id - command ID
      * @param string $pduBody - PDU body
-     * @return SmppPdu
+     * @return Pdu
      */
     protected function sendCommand($id, $pduBody, $needReply = true)
     {
         if (!$this->transport->isOpen()) {
             return false;
         }
-        $pdu = new SmppPdu($id, 0, $this->sequence_number, $pduBody);
+        $pdu = new Pdu($id, 0, $this->sequence_number, $pduBody);
         $this->sendPDU($pdu);
         if ($needReply) {
             $response = $this->readPDU_resp($this->sequence_number, $pdu->id);
@@ -703,9 +704,9 @@ class SmppClient
 
     /**
      * Prepares and sends PDU to SMSC.
-     * @param SmppPdu $pdu
+     * @param Pdu $pdu
      */
-    protected function sendPDU(SmppPdu $pdu)
+    protected function sendPDU(Pdu $pdu)
     {
         $length = strlen($pdu->body) + 16;
         $header = pack("NNNN", $length, $pdu->id, $pdu->status, $pdu->sequence);
@@ -725,7 +726,7 @@ class SmppClient
      *
      * @param integer $seq_number - PDU sequence number
      * @param integer $command_id - PDU command ID
-     * @return SmppPdu
+     * @return Pdu
      * @throws SmppException
      */
     protected function readPDU_resp($seq_number, $command_id)
@@ -787,7 +788,7 @@ class SmppClient
         } else {
             $body = null;
         }
-        $pdu = new SmppPdu($command_id, $command_status, $sequence_number, $body);
+        $pdu = new Pdu($command_id, $command_status, $sequence_number, $body);
 
         Logger::debug("Read PDU         : $length bytes");
         Logger::debug(' ' . chunk_split(bin2hex($bufLength . $bufHeaders . $body), 2, " "));
@@ -873,8 +874,8 @@ class SmppClient
      * Allows to send USSD
      *
      * @param string $serviceType
-     * @param SmppAddress $source
-     * @param SmppAddress $destination
+     * @param Address $source
+     * @param Address $destination
      * @param string $short_message
      * @param Tag[] $tags
      * @param integer $dataCoding
@@ -886,8 +887,8 @@ class SmppClient
      */
     protected function submit_sm_ex(
         $serviceType,
-        SmppAddress $source,
-        SmppAddress $destination,
+        Address $source,
+        Address $destination,
         $short_message = null,
         $tags = null,
         $dataCoding = SMPP::DATA_CODING_DEFAULT,
@@ -942,7 +943,7 @@ class SmppClient
         return $body['msgid'];
     }
 
-    public function sendUSSD(SmppAddress $from, SmppAddress $to, $message, $tags, $dataCoding)
+    public function sendUSSD(Address $from, Address $to, $message, $tags, $dataCoding)
     {
         return $this->submit_sm_ex(
             SMPP::SERVICE_TYPE_USSD, $from, $to, $message, $tags, $dataCoding,

@@ -1,14 +1,14 @@
 <?php
 
-namespace PhpSmpp\SMPP;
+namespace PhpSmpp\Pdu\Part;
 
-use PhpSmpp\SMPP\SMPP;
+use PhpSmpp\SMPP;
 
 /**
  * Primitive class for encapsulating smpp addresses
  * @author hd@onlinecity.dk
  */
-class SmppAddress
+class Address
 {
     public $ton; // type-of-number
     public $npi; // numbering-plan-indicator

@@ -1,12 +1,12 @@
 <?php
 
-namespace PhpSmpp\SMPP\Unit;
+namespace PhpSmpp\Pdu;
 
 
-use PhpSmpp\SMPP\SMPP;
-use PhpSmpp\SMPP\Tag;
+use PhpSmpp\SMPP;
+use PhpSmpp\Pdu\Part\Tag;
 
-abstract class Sm extends SmppPdu
+abstract class Sm extends Pdu
 {
     public $serviceType;
     public $source;
@@ -23,14 +23,14 @@ abstract class Sm extends SmppPdu
     /** @var string sms identifier from smsc */
     public $msgId;
 
-    public static function constructFromPdu(SmppPdu $pdu)
+    public static function constructFromPdu(Pdu $pdu)
     {
         $sm = new static($pdu->id, $pdu->status, $pdu->sequence, $pdu->body);
         return $sm;
     }
 
     /**
-     * @return SmppPdu
+     * @return Pdu
      */
     public function buildResp()
     {
@@ -38,7 +38,7 @@ abstract class Sm extends SmppPdu
         if ($this->id == SMPP::SUBMIT_SM) {
             $id = SMPP::SUBMIT_SM_RESP;
         }
-        $response = new SmppPdu($id, SMPP::ESME_ROK, $this->sequence, "\x00");
+        $response = new Pdu($id, SMPP::ESME_ROK, $this->sequence, "\x00");
         return $response;
     }
 

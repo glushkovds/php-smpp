@@ -3,28 +3,27 @@
 namespace PhpSmpp;
 
 
-use PhpSmpp\SMPP\SMPP;
-use PhpSmpp\SMPP\SmppAddress;
-use PhpSmpp\SMPP\Tag;
-use PhpSmpp\SMPP\Unit\DeliverReceiptSm;
-use PhpSmpp\SMPP\Unit\DeliverSm;
-use PhpSmpp\SMPP\Unit\Sm;
-use PhpSmpp\SMPP\Unit\SmppPdu;
-use PhpSmpp\SMPP\Unit\SubmitSm;
+use PhpSmpp\Pdu\Part\Address;
+use PhpSmpp\Pdu\Part\Tag;
+use PhpSmpp\Pdu\DeliverReceiptSm;
+use PhpSmpp\Pdu\DeliverSm;
+use PhpSmpp\Pdu\Sm;
+use PhpSmpp\Pdu\Pdu;
+use PhpSmpp\Pdu\SubmitSm;
 
 class PduParser
 {
 
-    public static function isSm(SmppPdu $pdu)
+    public static function isSm(Pdu $pdu)
     {
         return in_array($pdu->id, [SMPP::DELIVER_SM, SMPP::SUBMIT_SM]);
     }
 
     /**
-     * @param SmppPdu $pdu
+     * @param Pdu $pdu
      * @return Sm
      */
-    public static function fromPdu(SmppPdu $pdu)
+    public static function fromPdu(Pdu $pdu)
     {
         // Check command id
         if (!static::isSm($pdu)) {
@@ -40,12 +39,12 @@ class PduParser
         $source_addr_ton = next($ar);
         $source_addr_npi = next($ar);
         $source_addr = Helper::getString($ar, 21);
-        $source = new SmppAddress($source_addr, $source_addr_ton, $source_addr_npi);
+        $source = new Address($source_addr, $source_addr_ton, $source_addr_npi);
 
         $dest_addr_ton = next($ar);
         $dest_addr_npi = next($ar);
         $destination_addr = Helper::getString($ar, 21);
-        $destination = new SmppAddress($destination_addr, $dest_addr_ton, $dest_addr_npi);
+        $destination = new Address($destination_addr, $dest_addr_ton, $dest_addr_npi);
 
         $esmClass = next($ar);
         $protocolId = next($ar);

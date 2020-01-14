@@ -6,8 +6,8 @@ namespace PhpSmpp\Service;
 
 use PhpSmpp\Helper;
 use PhpSmpp\Logger;
-use PhpSmpp\SMPP\SMPP;
-use PhpSmpp\SMPP\SmppAddress;
+use PhpSmpp\SMPP;
+use PhpSmpp\Pdu\Part\Address;
 
 class Sender extends Service
 {
@@ -26,8 +26,8 @@ class Sender extends Service
     public function send($phone, $message, $from)
     {
         $this->enshureConnection();
-        $from = new SmppAddress($from, SMPP::TON_ALPHANUMERIC);
-        $to = new SmppAddress((int)$phone, SMPP::TON_INTERNATIONAL, SMPP::NPI_E164);
+        $from = new Address($from, SMPP::TON_ALPHANUMERIC);
+        $to = new Address((int)$phone, SMPP::TON_INTERNATIONAL, SMPP::NPI_E164);
 
         $encodedMessage = $message;
         $dataCoding = SMPP::DATA_CODING_DEFAULT;
@@ -74,8 +74,8 @@ class Sender extends Service
     public function sendUSSD($phone, $message, $from, array $tags)
     {
         $this->enshureConnection();
-        $from = new SmppAddress($from, SMPP::TON_UNKNOWN, SMPP::NPI_E164);
-        $to = new SmppAddress((int)$phone, SMPP::TON_INTERNATIONAL, SMPP::NPI_E164);
+        $from = new Address($from, SMPP::TON_UNKNOWN, SMPP::NPI_E164);
+        $to = new Address((int)$phone, SMPP::TON_INTERNATIONAL, SMPP::NPI_E164);
         $encodedMessage = $message;
         $dataCoding = SMPP::DATA_CODING_DEFAULT;
         if (Helper::hasUTFChars($message)) {

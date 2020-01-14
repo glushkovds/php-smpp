@@ -1,8 +1,8 @@
 <?php
 
-namespace PhpSmpp\SMPP;
+namespace PhpSmpp\Pdu\Part;
 
-use PhpSmpp\SMPP\Exception\SmppException;
+use PhpSmpp\Exception\SmppException;
 
 /**
  * Primitive class to represent SMPP optional params, also know as TLV (Tag-Length-Value) params

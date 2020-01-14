@@ -3,8 +3,8 @@
 namespace PhpSmpp\Transport;
 
 
-use PhpSmpp\SMPP\SMPP;
-use PhpSmpp\SMPP\Unit\SmppPdu;
+use PhpSmpp\SMPP;
+use PhpSmpp\Pdu\Pdu;
 
 class FakeTransport implements Transport
 {
@@ -21,14 +21,14 @@ class FakeTransport implements Transport
 
     public function initQueue()
     {
-        $this->queue[] = (new SmppPdu(SMPP::BIND_RECEIVER_RESP, SMPP::ESME_ROK, 1, "\x00"))->getBinary();
-        $this->queue[] = (new SmppPdu(SMPP::ENQUIRE_LINK_RESP, SMPP::ESME_ROK, 1, "\x00"))->getBinary();
+        $this->queue[] = (new Pdu(SMPP::BIND_RECEIVER_RESP, SMPP::ESME_ROK, 1, "\x00"))->getBinary();
+        $this->queue[] = (new Pdu(SMPP::ENQUIRE_LINK_RESP, SMPP::ESME_ROK, 1, "\x00"))->getBinary();
         $this->queue[] = self::getDelivery();
     }
 
     protected function getDelivery()
     {
-        $hex = file_get_contents('../Tests/deliversm.hex');
+        $hex = file_get_contents(__DIR__ . '/../Tests/deliversm.hex');
         $bin = hex2bin($hex);
         return $bin;
     }

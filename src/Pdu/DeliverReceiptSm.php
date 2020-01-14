@@ -1,10 +1,10 @@
 <?php
 
-namespace PhpSmpp\SMPP\Unit;
+namespace PhpSmpp\Pdu;
 
 
 use PhpSmpp\Logger;
-use PhpSmpp\SMPP\Tag;
+use PhpSmpp\Pdu\Part\Tag;
 
 class DeliverReceiptSm extends DeliverSm
 {

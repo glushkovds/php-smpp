@@ -1,11 +1,11 @@
 <?php
 
-require '../../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
 use PhpSmpp\PduParser;
-use PhpSmpp\SMPP\Unit\SmppPdu;
+use PhpSmpp\Pdu\Pdu;
 
-$hex = file_get_contents('deliversm.hex');
+$hex = file_get_contents(__DIR__ . '/deliversm.hex');
 $bin = hex2bin($hex);
 
 // Read PDU length
@@ -29,7 +29,7 @@ if ($length - 16 > 0) {
 } else {
     $body = null;
 }
-$pdu = new SmppPdu($command_id, $command_status, $sequence_number, $body);
+$pdu = new Pdu($command_id, $command_status, $sequence_number, $body);
 $message = PduParser::fromPdu($pdu);
 print_r($pdu);
 print_r($message);

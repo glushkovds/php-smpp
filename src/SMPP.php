@@ -1,6 +1,6 @@
 <?php
 
-namespace PhpSmpp\SMPP;
+namespace PhpSmpp;
 
 /**
  * Numerous constants for SMPP v3.4

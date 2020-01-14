@@ -1,15 +1,15 @@
 <?php
 
-namespace PhpSmpp\SMPP\Unit;
+namespace PhpSmpp\Pdu;
 
-use PhpSmpp\SMPP\Unit\SmppPdu;
-use PhpSmpp\SMPP\SmppAddress;
+use PhpSmpp\Pdu\Pdu;
+use PhpSmpp\Pdu\Part\Address;
 
 /**
  * Primitive type to represent SMSes
  * @author hd@onlinecity.dk
  */
-class SmppSms extends SmppPdu
+class SmppSms extends Pdu
 {
     public $service_type;
     public $source;
@@ -50,7 +50,7 @@ class SmppSms extends SmppPdu
      * @param integer $smDefaultMsgId (optional)
      * @param integer $replaceIfPresentFlag (optional)
      */
-    public function __construct($id, $status, $sequence, $body, $service_type, SmppAddress $source, SmppAddress $destination,
+    public function __construct($id, $status, $sequence, $body, $service_type, Address $source, Address $destination,
                                 $esmClass, $protocolId, $priorityFlag, $registeredDelivery, $dataCoding, $message, $tags,
                                 $scheduleDeliveryTime = null, $validityPeriod = null, $smDefaultMsgId = null, $replaceIfPresentFlag = null)
     {

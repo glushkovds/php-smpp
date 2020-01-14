@@ -4,7 +4,7 @@ namespace PhpSmpp\Service;
 
 
 use PhpSmpp\Logger;
-use PhpSmpp\SMPP\SmppClient;
+use PhpSmpp\Client;
 
 abstract class Service
 {
@@ -15,7 +15,7 @@ abstract class Service
     protected $pass;
     protected $debug = false;
 
-    /** @var SmppClient */
+    /** @var Client */
     public $client = null;
 
     public function __construct($hosts, $login, $pass, $debug = false)
@@ -35,7 +35,7 @@ abstract class Service
         if (!empty($this->client)) {
             return;
         }
-        $this->client = new SmppClient($this->hosts);
+        $this->client = new Client($this->hosts);
         $this->client->debug = $this->debug;
     }
 
