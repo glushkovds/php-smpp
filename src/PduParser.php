@@ -3,6 +3,7 @@
 namespace PhpSmpp;
 
 
+use PhpSmpp\Pdu\DeliverUssdSm;
 use PhpSmpp\Pdu\Part\Address;
 use PhpSmpp\Pdu\Part\Tag;
 use PhpSmpp\Pdu\DeliverReceiptSm;
@@ -34,17 +35,17 @@ class PduParser
         $ar = unpack("C*", $pdu->body);
 
         // Read mandatory params
-        $service_type = Helper::getString($ar, 6, true);
+        $serviceType = Helper::getString($ar, 6, true);
 
-        $source_addr_ton = next($ar);
-        $source_addr_npi = next($ar);
-        $source_addr = Helper::getString($ar, 21);
-        $source = new Address($source_addr, $source_addr_ton, $source_addr_npi);
+        $sourceAddrTon = next($ar);
+        $sourceAddrNpi = next($ar);
+        $sourceAddr = Helper::getString($ar, 21);
+        $source = new Address($sourceAddr, $sourceAddrTon, $sourceAddrNpi);
 
-        $dest_addr_ton = next($ar);
-        $dest_addr_npi = next($ar);
-        $destination_addr = Helper::getString($ar, 21);
-        $destination = new Address($destination_addr, $dest_addr_ton, $dest_addr_npi);
+        $destAddrTon = next($ar);
+        $destAddrNpi = next($ar);
+        $destinationAddr = Helper::getString($ar, 21);
+        $destination = new Address($destinationAddr, $destAddrTon, $destAddrNpi);
 
         $esmClass = next($ar);
         $protocolId = next($ar);
@@ -75,13 +76,15 @@ class PduParser
         if (SMPP::DELIVER_SM == $pdu->id) {
             if (($esmClass & SMPP::ESM_DELIVER_SMSC_RECEIPT) != 0) {
                 $class = DeliverReceiptSm::class;
+            } elseif (SMPP::SERVICE_TYPE_USSD === $serviceType) {
+                $class = DeliverUssdSm::class;
             } else {
                 $class = DeliverSm::class;
             }
         }
 
         $sm = $class::constructFromPdu($pdu);
-        $sm->serviceType = $service_type;
+        $sm->serviceType = $serviceType;
         $sm->source = $source;
         $sm->destination = $destination;
         $sm->esmClass = $esmClass;

@@ -28,7 +28,7 @@ class FakeTransport implements Transport
 
     protected function getDelivery()
     {
-        $hex = file_get_contents(__DIR__ . '/../Tests/deliversm.hex');
+        $hex = file_get_contents(__DIR__ . '/../Tests/ussd.hex');
         $bin = hex2bin($hex);
         return $bin;
     }

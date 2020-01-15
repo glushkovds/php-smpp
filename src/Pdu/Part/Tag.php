@@ -95,6 +95,22 @@ class Tag
     }
 
     /**
+     * @return string
+     */
+    public function getValueAsStr()
+    {
+        return bin2hex($this->value);
+    }
+
+    /**
+     * @return float|int
+     */
+    public function getValueAsInt()
+    {
+        return hexdec($this->getValueAsStr());
+    }
+
+    /**
      * Build Tag with predefined params
      * @param string $id
      * @param string $value
