@@ -29,6 +29,8 @@ use PhpSmpp\Transport\Transport;
 class Client
 {
 
+    const DEFAULT_PORT = 2775;
+
     const BIND_MODE_RECEIVER = 'receiver';
     const BIND_MODE_TRANSMITTER = 'transmitter';
     const BIND_MODE_TRANSCEIVER = 'transceiver';
@@ -119,12 +121,21 @@ class Client
     public function setDebugHandler(callable $callback)
     {
         $this->debugHandler = $callback;
+        if ($this->transport) {
+            $this->setDebugHandler($callback);
+        }
     }
 
     public function getTransport()
     {
         if (empty($this->transport)) {
-            $this->transport = new SocketTransport($this->hosts, [2775]);
+            $hosts = $ports = [];
+            foreach ($this->hosts as $host) {
+                $ar = explode(':', $host);
+                $hosts[] = $ar[0];
+                $ports[] = $ar[1] ?? static::DEFAULT_PORT;
+            }
+            $this->transport = new SocketTransport($hosts, $ports, false, $this->debugHandler);
             $this->transport->setRecvTimeout(10000);
         }
         return $this->transport;
@@ -181,7 +192,7 @@ class Client
      * Set callback handler for Sm, when it arrived
      * @param Callable $callback param is Sm object
      */
-    public function setListener(Callable $callback)
+    public function setListener(callable $callback)
     {
         $this->readSmsCallback = $callback;
     }
@@ -301,7 +312,7 @@ class Client
         }
     }
 
-    public function listenSm(Callable $callback)
+    public function listenSm(callable $callback)
     {
         do {
             $pdu = $this->readPDU();
@@ -794,11 +805,11 @@ class Client
         }
         $pdu = new Pdu($command_id, $command_status, $sequence_number, $body);
 
-        call_user_func($this->debugHandler,"Read PDU         : $length bytes");
-        call_user_func($this->debugHandler,' ' . chunk_split(bin2hex($bufLength . $bufHeaders . $body), 2, " "));
-        call_user_func($this->debugHandler," command id      : 0x" . dechex($command_id));
-        call_user_func($this->debugHandler," command status  : 0x" . dechex($command_status) . " " . SMPP::getStatusMessage($command_status));
-        call_user_func($this->debugHandler,' sequence number : ' . $sequence_number);
+        call_user_func($this->debugHandler, "Read PDU         : $length bytes");
+        call_user_func($this->debugHandler, ' ' . chunk_split(bin2hex($bufLength . $bufHeaders . $body), 2, " "));
+        call_user_func($this->debugHandler, " command id      : 0x" . dechex($command_id));
+        call_user_func($this->debugHandler, " command status  : 0x" . dechex($command_status) . " " . SMPP::getStatusMessage($command_status));
+        call_user_func($this->debugHandler, ' sequence number : ' . $sequence_number);
 
         return $pdu;
     }

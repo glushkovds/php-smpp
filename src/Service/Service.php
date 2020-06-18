@@ -82,6 +82,9 @@ abstract class Service
     public function setDebugHandler(callable $callback)
     {
         $this->debugHandler = $callback;
+        if ($this->client) {
+            $this->client->setDebugHandler($callback);
+        }
     }
 
 }
