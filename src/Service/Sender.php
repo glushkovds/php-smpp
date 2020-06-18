@@ -43,7 +43,7 @@ class Sender extends Service
             try {
                 $smsId = $this->client->sendSMS($from, $to, $encodedMessage, null, $dataCoding);
             } catch (\Throwable $e) {
-                Logger::debug("Got error while sending SMS. Retry=$i");
+                call_user_func($this->debugHandler, "Got error while sending SMS. Retry=$i");
                 $this->unbind();
                 $this->enshureConnection();
                 $lastError = $e;
@@ -56,8 +56,7 @@ class Sender extends Service
 
         if (empty($smsId)) {
             $error = $lastError ?? new \Error("SMPP: no smsc answer");
-//            Logger::debug(print_r($error, true));
-            Logger::debug($error->getMessage());
+            call_user_func($this->debugHandler, $error->getMessage());
             throw $error;
         }
 

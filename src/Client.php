@@ -2,7 +2,6 @@
 
 namespace PhpSmpp;
 
-use PhpSmpp\Logger;
 use PhpSmpp\Pdu\Part\Address;
 use PhpSmpp\PduParser;
 use PhpSmpp\Transport\SocketTransport;
@@ -55,7 +54,7 @@ class Client
      * Switch to toggle this feature
      * @var boolean
      */
-    public static $sms_null_terminate_octetstrings = false;
+    public $nullTerminateOctetstrings = false;
 
     /**
      * Use sar_msg_ref_num and sar_total_segments with 16 bit tags
@@ -115,6 +114,11 @@ class Client
 
         $this->debugHandler = 'error_log';
         $this->mode = null;
+    }
+
+    public function setDebugHandler(callable $callback)
+    {
+        $this->debugHandler = $callback;
     }
 
     public function getTransport()
@@ -309,7 +313,7 @@ class Client
                     $sm = PduParser::fromPdu($pdu);
                     $this->sendPDU($sm->buildResp());
                 } catch (\Throwable $e) {
-                    Logger::debug('Failed parse pdu: ' . $e->getMessage() . ' ' . print_r($pdu, true));
+                    call_user_func($this->debugHandler, 'Failed parse pdu: ' . $e->getMessage() . ' ' . print_r($pdu, true));
                     usleep(10e4);
                     continue;
                 }
@@ -457,7 +461,7 @@ class Client
             'a1cca' . (strlen($source->value) + 1)
             . 'cca' . (strlen($destination->value) + 1)
             . 'ccc' . ($scheduleDeliveryTime ? 'a16x' : 'a1') . ($validityPeriod ? 'a16x' : 'a1')
-            . 'ccccca' . (strlen($short_message) + (self::$sms_null_terminate_octetstrings ? 1 : 0)),
+            . 'ccccca' . (strlen($short_message) + ($this->nullTerminateOctetstrings ? 1 : 0)),
             self::$sms_service_type,
             $source->ton,
             $source->npi,
@@ -474,7 +478,7 @@ class Client
             self::$sms_replace_if_present_flag,
             $dataCoding,
             self::$sms_sm_default_msg_id,
-            strlen($short_message) + (self::$sms_null_terminate_octetstrings ? 1 : 0),//sm_length
+            strlen($short_message) + ($this->nullTerminateOctetstrings ? 1 : 0),//sm_length
             $short_message//short_message
         );
 
@@ -790,11 +794,11 @@ class Client
         }
         $pdu = new Pdu($command_id, $command_status, $sequence_number, $body);
 
-        Logger::debug("Read PDU         : $length bytes");
-        Logger::debug(' ' . chunk_split(bin2hex($bufLength . $bufHeaders . $body), 2, " "));
-        Logger::debug(" command id      : 0x" . dechex($command_id));
-        Logger::debug(" command status  : 0x" . dechex($command_status) . " " . SMPP::getStatusMessage($command_status));
-        Logger::debug(' sequence number : ' . $sequence_number);
+        call_user_func($this->debugHandler,"Read PDU         : $length bytes");
+        call_user_func($this->debugHandler,' ' . chunk_split(bin2hex($bufLength . $bufHeaders . $body), 2, " "));
+        call_user_func($this->debugHandler," command id      : 0x" . dechex($command_id));
+        call_user_func($this->debugHandler," command status  : 0x" . dechex($command_status) . " " . SMPP::getStatusMessage($command_status));
+        call_user_func($this->debugHandler,' sequence number : ' . $sequence_number);
 
         return $pdu;
     }
@@ -907,7 +911,7 @@ class Client
             "a{$serviceTypeLen}cca" . (strlen($source->value) + 1)
             . 'cca' . (strlen($destination->value) + 1)
             . 'ccc' . ($scheduleDeliveryTime ? 'a16x' : 'a1') . ($validityPeriod ? 'a16x' : 'a1')
-            . 'ccccca' . (strlen($short_message) + (self::$sms_null_terminate_octetstrings ? 1 : 0)),
+            . 'ccccca' . (strlen($short_message) + ($this->nullTerminateOctetstrings ? 1 : 0)),
             $serviceType,
             $source->ton,
             $source->npi,
@@ -924,7 +928,7 @@ class Client
             self::$sms_replace_if_present_flag,
             $dataCoding,
             self::$sms_sm_default_msg_id,
-            strlen($short_message) + (self::$sms_null_terminate_octetstrings ? 1 : 0),//sm_length
+            strlen($short_message) + ($this->nullTerminateOctetstrings ? 1 : 0),//sm_length
             $short_message//short_message
         );
 

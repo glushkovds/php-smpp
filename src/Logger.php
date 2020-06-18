@@ -12,6 +12,6 @@ class Logger
         if (!static::$enabled) {
             return;
         }
-        echo $mixed . "\n";
+        // TODO
     }
 }

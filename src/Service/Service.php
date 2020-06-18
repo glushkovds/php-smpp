@@ -3,7 +3,6 @@
 namespace PhpSmpp\Service;
 
 
-use PhpSmpp\Logger;
 use PhpSmpp\Client;
 
 abstract class Service
@@ -14,6 +13,7 @@ abstract class Service
     protected $login;
     protected $pass;
     protected $debug = false;
+    protected $debugHandler = 'error_log';
 
     /** @var Client */
     public $client = null;
@@ -24,7 +24,6 @@ abstract class Service
         $this->login = $login;
         $this->pass = $pass;
         $this->debug = $debug;
-        Logger::$enabled = $debug;
         $this->initClient();
     }
 
@@ -37,6 +36,7 @@ abstract class Service
         }
         $this->client = new Client($this->hosts);
         $this->client->debug = $this->debug;
+        $this->client->setDebugHandler($this->debugHandler);
     }
 
     protected function openConnection()
@@ -77,6 +77,11 @@ abstract class Service
             $this->bind();
             $this->client->enquireLink();
         }
+    }
+
+    public function setDebugHandler(callable $callback)
+    {
+        $this->debugHandler = $callback;
     }
 
 }
