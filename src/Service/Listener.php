@@ -12,6 +12,9 @@ class Listener extends Service
         $this->client->bindReceiver($this->login, $this->pass);
     }
 
+    /**
+     * @param callable $callback \PhpSmpp\Pdu\Pdu passed as a parameter
+     */
     public function listen(Callable $callback)
     {
         while (true) {
