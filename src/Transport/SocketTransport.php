@@ -14,7 +14,7 @@ use PhpSmpp\Transport\Exception\SocketTransportException;
  * Licensed under the MIT license, which can be read at: http://www.opensource.org/licenses/mit-license.php
  * @author hd@onlinecity.dk
  */
-class SocketTransport
+class SocketTransport implements TransportInterface
 {
     protected $socket;
     protected $hosts;
@@ -377,6 +377,7 @@ class SocketTransport
      * Write (all) data to the socket.
      * Timeout throws SocketTransportException
      *
+     * @param string $buffer
      * @param integer $length
      */
     public function write($buffer, $length)

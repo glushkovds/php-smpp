@@ -6,7 +6,7 @@ namespace PhpSmpp\Transport;
 use PhpSmpp\SMPP;
 use PhpSmpp\Pdu\Pdu;
 
-class FakeTransport implements Transport
+class FakeTransport implements TransportInterface
 {
 
     public static $sendDeliversm = 1;
@@ -46,5 +46,25 @@ class FakeTransport implements Transport
     public function write($buffer, $length)
     {
 
+    }
+
+    public function setRecvTimeout($timeout)
+    {
+        // TODO: Implement setRecvTimeout() method.
+    }
+
+    public function close()
+    {
+        // TODO: Implement close() method.
+    }
+
+    public function hasData()
+    {
+        // TODO: Implement hasData() method.
+    }
+
+    public function open()
+    {
+        // TODO: Implement open() method.
     }
 }

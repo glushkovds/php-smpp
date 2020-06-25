@@ -9,7 +9,7 @@ use PhpSmpp\Pdu\Pdu;
 use PhpSmpp\Pdu\SmppSms;
 use PhpSmpp\Pdu\SmppDeliveryReceipt;
 use PhpSmpp\Exception\SmppException;
-use PhpSmpp\Transport\Transport;
+use PhpSmpp\Transport\TransportInterface;
 
 /**
  * Class for receiving or sending sms through SMPP protocol.
@@ -82,6 +82,9 @@ class Client
 
     protected $pdu_queue;
 
+    /**
+     * @var TransportInterface $transport
+     */
     protected $transport;
     protected $debugHandler;
 
@@ -126,6 +129,9 @@ class Client
         }
     }
 
+    /**
+     * @return TransportInterface
+     */
     public function getTransport()
     {
         if (empty($this->transport)) {
@@ -141,7 +147,7 @@ class Client
         return $this->transport;
     }
 
-    public function setTransport(Transport $transport)
+    public function setTransport(TransportInterface $transport)
     {
         $this->transport = $transport;
     }
@@ -212,11 +218,18 @@ class Client
             call_user_func($this->debugHandler, 'Unbinding...');
         }
 
-        $response = $this->sendCommand(SMPP::UNBIND, "");
-
-        if ($this->debug) {
-            call_user_func($this->debugHandler, "Unbind status   : " . $response->status);
+        try {
+            $response = $this->sendCommand(SMPP::UNBIND, "");
+            if ($this->debug) {
+                call_user_func($this->debugHandler, "Unbind status: " . $response->status);
+            }
+        } catch (\Throwable $e) {
+            if ($this->debug) {
+                call_user_func($this->debugHandler, "Unbind status: thrown error: " . $e->getMessage());
+            }
+            // Do nothing
         }
+        
         $this->transport->close();
     }
 
