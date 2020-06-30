@@ -12,17 +12,27 @@ abstract class Service
     protected $hosts;
     protected $login;
     protected $pass;
+    protected $bindMode;
     protected $debug = false;
     protected $debugHandler = 'error_log';
 
     /** @var Client */
     public $client = null;
 
-    public function __construct($hosts, $login, $pass, $debug = false)
+    /**
+     * Service constructor.
+     * @param array $hosts example ['123.123.123.123:2777','124.124.124.124']
+     * @param string $login
+     * @param string $pass
+     * @param string $bindMode example PhpSmpp\Client::BIND_MODE_TRANSMITTER
+     * @param bool $debug
+     */
+    public function __construct($hosts, $login, $pass, $bindMode, $debug = false)
     {
         $this->hosts = $hosts;
         $this->login = $login;
         $this->pass = $pass;
+        $this->bindMode = $bindMode;
         $this->debug = $debug;
         $this->initClient();
     }

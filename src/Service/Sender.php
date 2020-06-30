@@ -4,6 +4,7 @@
 namespace PhpSmpp\Service;
 
 
+use PhpSmpp\Client;
 use PhpSmpp\Helper;
 use PhpSmpp\Logger;
 use PhpSmpp\SMPP;
@@ -20,7 +21,11 @@ class Sender extends Service
     public function bind()
     {
         $this->openConnection();
-        $this->client->bindTransmitter($this->login, $this->pass);
+        if (Client::BIND_MODE_TRANSCEIVER == $this->bindMode) {
+            $this->client->bindTransceiver($this->login, $this->pass);
+        } else {
+            $this->client->bindTransmitter($this->login, $this->pass);
+        }
     }
 
     public function send($phone, $message, $from)
