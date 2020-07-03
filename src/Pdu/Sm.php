@@ -16,7 +16,7 @@ abstract class Sm extends Pdu
     public $priorityFlag;
     public $registeredDelivery;
     public $dataCoding;
-    public $shortMessage;
+    public $message;
     /** @var Tag[] */
     public $tags;
 

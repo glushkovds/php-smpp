@@ -56,7 +56,7 @@ class PduParser
         $dataCoding = next($ar);
         next($ar); // sm_default_msg_id
         $smLength = next($ar);
-        $shortMessage = Helper::getString($ar, $smLength);
+        $message = Helper::getString($ar, $smLength);
 
         // Check for optional params, and parse them
         $tags = [];
@@ -89,7 +89,7 @@ class PduParser
         $sm->priorityFlag = $priorityFlag;
         $sm->registeredDelivery = $registeredDelivery;
         $sm->dataCoding = $dataCoding;
-        $sm->shortMessage = $shortMessage;
+        $sm->message = $message;
         $sm->tags = $tags;
 
         foreach ($sm->tags as $tag) {
