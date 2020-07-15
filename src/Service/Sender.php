@@ -84,7 +84,7 @@ class Sender extends Service
         $dataCoding = SMPP::DATA_CODING_DEFAULT;
         if (Helper::hasUTFChars($message)) {
             $encodedMessage = iconv('UTF-8', 'UCS-2BE', $message);
-            $dataCoding = SMPP::DATA_CODING_UCS2;
+            $dataCoding = SMPP::DATA_CODING_UCS2_USSD;
         }
         $smsId = $this->client->sendUSSD($from, $to, $encodedMessage, $tags, $dataCoding);
         return $smsId;
