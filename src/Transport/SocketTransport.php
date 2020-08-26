@@ -14,7 +14,7 @@ use PhpSmpp\Transport\Exception\SocketTransportException;
  * Licensed under the MIT license, which can be read at: http://www.opensource.org/licenses/mit-license.php
  * @author hd@onlinecity.dk
  */
-class SocketTransport implements TransportInterface
+class SocketTransport
 {
     protected $socket;
     protected $hosts;
@@ -345,33 +345,6 @@ class SocketTransport implements TransportInterface
             if (empty($r)) throw new SocketTransportException('Timed out waiting for data on socket');
         }
     }
-
-    public function readPDU()
-    {
-        // Read PDU length
-        $bufLength = $this->read(4);
-        if (!$bufLength) {
-            return null;
-        }
-        /** @var int $length */
-        extract(unpack("Nlength", $bufLength));
-
-        // Read PDU headers
-        $bufHeaders = $this->read(12);
-        if (!$bufHeaders) {
-            return null;
-        }
-
-        // Read PDU body
-        if ($length - 16 > 0) {
-            $body = $this->readAll($length - 16);
-            if (!$body) throw new \RuntimeException('Could not read PDU body');
-        } else {
-            $body = null;
-        }
-        return $bufLength . $bufHeaders . $body;
-    }
-
 
     /**
      * Write (all) data to the socket.

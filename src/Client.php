@@ -4,6 +4,7 @@ namespace PhpSmpp;
 
 use PhpSmpp\Pdu\Part\Address;
 use PhpSmpp\PduParser;
+use PhpSmpp\Transport\SMPPSocketTransport;
 use PhpSmpp\Transport\SocketTransport;
 use PhpSmpp\Pdu\Pdu;
 use PhpSmpp\Pdu\SmppSms;
@@ -103,10 +104,8 @@ class Client
     protected $readSmsCallback;
 
     /**
-     * Construct the SMPP class
-     *
-     * @param SocketTransport $transport
-     * @param string $debugHandler
+     * Client constructor.
+     * @param array $hosts ['ip:port','ip2:port2']
      */
     public function __construct($hosts)
     {
@@ -141,7 +140,7 @@ class Client
                 $hosts[] = $ar[0];
                 $ports[] = $ar[1] ?? static::DEFAULT_PORT;
             }
-            $this->transport = new SocketTransport($hosts, $ports, false, $this->debugHandler);
+            $this->transport = new SMPPSocketTransport($hosts, $ports, false, $this->debugHandler);
             $this->transport->setRecvTimeout(10000);
         }
         return $this->transport;
@@ -229,7 +228,7 @@ class Client
             }
             // Do nothing
         }
-        
+
         $this->transport->close();
     }
 
@@ -736,15 +735,15 @@ class Client
      */
     protected function sendPDU(Pdu $pdu)
     {
-        $length = strlen($pdu->body) + 16;
-        $header = pack("NNNN", $length, $pdu->id, $pdu->status, $pdu->sequence);
         if ($this->debug) {
+            $length = strlen($pdu->body) + 16;
+            $header = pack("NNNN", $length, $pdu->id, $pdu->status, $pdu->sequence);
             call_user_func($this->debugHandler, "Send PDU         : $length bytes");
             call_user_func($this->debugHandler, ' ' . chunk_split(bin2hex($header . $pdu->body), 2, " "));
             call_user_func($this->debugHandler, ' command_id      : 0x' . dechex($pdu->id));
             call_user_func($this->debugHandler, ' sequence number : ' . $pdu->sequence);
         }
-        $this->transport->write($header . $pdu->body, $length);
+        $this->transport->sendPDU($pdu);
     }
 
     /**
@@ -818,11 +817,13 @@ class Client
         }
         $pdu = new Pdu($command_id, $command_status, $sequence_number, $body);
 
-        call_user_func($this->debugHandler, "Read PDU         : $length bytes");
-        call_user_func($this->debugHandler, ' ' . chunk_split(bin2hex($bufLength . $bufHeaders . $body), 2, " "));
-        call_user_func($this->debugHandler, " command id      : 0x" . dechex($command_id));
-        call_user_func($this->debugHandler, " command status  : 0x" . dechex($command_status) . " " . SMPP::getStatusMessage($command_status));
-        call_user_func($this->debugHandler, ' sequence number : ' . $sequence_number);
+        if ($this->debug) {
+            call_user_func($this->debugHandler, "Read PDU         : $length bytes");
+            call_user_func($this->debugHandler, ' ' . chunk_split(bin2hex($bufLength . $bufHeaders . $body), 2, " "));
+            call_user_func($this->debugHandler, " command id      : 0x" . dechex($command_id));
+            call_user_func($this->debugHandler, " command status  : 0x" . dechex($command_status) . " " . SMPP::getStatusMessage($command_status));
+            call_user_func($this->debugHandler, ' sequence number : ' . $sequence_number);
+        }
 
         return $pdu;
     }

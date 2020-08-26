@@ -3,6 +3,7 @@
 namespace PhpSmpp\Transport;
 
 
+use PhpSmpp\Pdu\Pdu;
 use PhpSmpp\Transport\Exception\SocketTransportException;
 
 interface TransportInterface
@@ -50,13 +51,10 @@ interface TransportInterface
     public function open();
 
     /**
-     * Write (all) data to the socket.
-     * Timeout throws SocketTransportException
-     *
-     * @param string $buffer
-     * @param integer $length
+     * Prepares and sends PDU to SMSC.
+     * @param Pdu $pdu
      */
-    public function write($buffer, $length);
+    public function sendPDU(Pdu $pdu);
 
     /**
      * @return string|null
