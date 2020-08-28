@@ -11,20 +11,13 @@ class ReadSMSTest extends TestCase
         $service->client->setTransport(new \PhpSmpp\Transport\FakeTransport());
         /** @var \PhpSmpp\Transport\FakeTransport $transport */
         $transport = $service->client->getTransport();
-        $transport->enqueueDeliverySm();
+        $transport->enqueueDeliverReceiptSm();
         $service->listenOnce(function (\PhpSmpp\Pdu\Pdu $pdu) {
-            $this->assertInstanceOf(\PhpSmpp\Pdu\Pdu::class, $pdu);
-//            var_dump($pdu);
-//            if($pdu instanceof \PhpSmpp\Pdu\Sm) {
-//                var_dump($pdu->msgId);
-//            }
-//            if ($pdu instanceof \PhpSmpp\Pdu\DeliverReceiptSm) {
-//                var_dump($pdu->state);
-//                var_dump($pdu->state == \PhpSmpp\SMPP::STATE_DELIVERED);
-//            } else {
-//                echo 'not receipt';
-//            }
-//            die;
+            $this->assertInstanceOf(\PhpSmpp\Pdu\DeliverReceiptSm::class, $pdu);
+            /** @var \PhpSmpp\Pdu\DeliverReceiptSm $pdu */
+            $this->assertEquals('992900249911', $pdu->destination->value);
+            $this->assertEquals(\PhpSmpp\SMPP::STATE_REJECTED, $pdu->state);
+            $this->assertNotEmpty($pdu->msgId);
         });
     }
 }

@@ -31,10 +31,9 @@ class FakeTransport implements TransportInterface
 
     protected $dataDir = __DIR__ . '/../Tests/data';
 
-    public function enqueueDeliverySm()
+    public function enqueueDeliverReceiptSm()
     {
-        $this->queue[] = $this->getDeliverReceiptSm()->getBinary();
-//        $this->queue[] = $this->getPduBinary('ussd');
+        $this->queue[] = $this->getPduBinary('deliver_receipt');
     }
 
     protected function getPduBinary($name)

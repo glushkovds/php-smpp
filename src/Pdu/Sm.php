@@ -3,24 +3,34 @@
 namespace PhpSmpp\Pdu;
 
 
+use PhpSmpp\Pdu\Part\Address;
 use PhpSmpp\SMPP;
 use PhpSmpp\Pdu\Part\Tag;
 
 abstract class Sm extends Pdu
 {
+    /** @var string $serviceType empty string for sms and 'USSD' for ussd */
     public $serviceType;
+    /** @var Address */
     public $source;
+    /** @var Address */
     public $destination;
+    /** @var int $esmClass */
     public $esmClass;
+    /** @var int $protocolId */
     public $protocolId;
+    /** @var int $priorityFlag */
     public $priorityFlag;
+    /** @var int $registeredDelivery */
     public $registeredDelivery;
+    /** @var int $dataCoding */
     public $dataCoding;
+    /** @var string $message */
     public $message;
     /** @var Tag[] */
     public $tags;
 
-    /** @var string sms identifier from smsc */
+    /** @var string $msgId sms identifier from smsc */
     public $msgId;
 
     public static function constructFromPdu(Pdu $pdu)
