@@ -21,12 +21,13 @@ Key differences:
 1. Object oriented way with Pdu, ShortMessage, Sms and other classes
 1. PSR-1,4,12 support
 1. Requires php7.1+
+1. Phpunit auto tests 
 
 Installation
 -----
 
 ```bash
-php composer.phar require glushkovds/php-smpp:dev-master
+composer require glushkovds/php-smpp "^0.5"
 ```
 
 Basic usage example
@@ -59,6 +60,18 @@ $service->listen(function (\PhpSmpp\SMPP\Unit\Sm $sm) {
         echo 'not receipt';
     }
 });
+```
+
+Perform testing your code with fake transport (also available for Listener):
+
+```php
+
+<?php
+require_once 'vendor/autoload.php';
+
+$service = new \PhpSmpp\Service\Sender(['smschost.net'], 'login', 'pass');
+$service->client->setTransport(new \PhpSmpp\Transport\FakeTransport());
+$smsId = $service->send(79001001010, 'Hello world!', 'Sender');
 ```
 
 
