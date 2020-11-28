@@ -31,9 +31,9 @@ class FakeTransport implements TransportInterface
 
     protected $dataDir = __DIR__ . '/../Tests/data';
 
-    public function enqueueDeliverReceiptSm()
+    public function enqueueDeliverReceiptSm($name = 'deliver_receipt')
     {
-        $this->queue[] = $this->getPduBinary('deliver_receipt');
+        $this->queue[] = $this->getPduBinary($name);
     }
 
     protected function getPduBinary($name)
@@ -90,6 +90,7 @@ class FakeTransport implements TransportInterface
                 SMPP::ENQUIRE_LINK => (new Pdu(SMPP::ENQUIRE_LINK_RESP, SMPP::ESME_ROK, $sequence, "\x00"))->getBinary(),
                 SMPP::BIND_TRANSMITTER => (new Pdu(SMPP::BIND_TRANSMITTER_RESP, SMPP::ESME_ROK, $sequence, "\x00"))->getBinary(),
                 SMPP::BIND_RECEIVER => (new Pdu(SMPP::BIND_RECEIVER_RESP, SMPP::ESME_ROK, $sequence, "\x00"))->getBinary(),
+                SMPP::BIND_TRANSCEIVER => (new Pdu(SMPP::BIND_TRANSCEIVER_RESP, SMPP::ESME_ROK, $sequence, "\x00"))->getBinary(),
                 SMPP::SUBMIT_SM => (new Pdu(SMPP::SUBMIT_SM_RESP, SMPP::ESME_ROK, $sequence, rand(100000, 999999)))->getBinary(),
             ];
             $answer = $answerMap[$item['pdu']->id] ?? null;

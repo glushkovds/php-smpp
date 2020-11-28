@@ -1,6 +1,11 @@
 PHP implementation SMPP v3.4 protocol
 =============
 
+[![Latest Stable Version](https://poser.pugx.org/glushkovds/php-smpp/v/stable)](https://packagist.org/packages/subb98/vk-publisher)
+[![Total Downloads](https://poser.pugx.org/glushkovds/php-smpp/downloads)](https://packagist.org/packages/subb98/vk-publisher)
+[![Latest Unstable Version](https://poser.pugx.org/glushkovds/php-smpp/v/unstable)](https://packagist.org/packages/subb98/vk-publisher)
+[![License](https://poser.pugx.org/glushkovds/php-smpp/license)](https://packagist.org/packages/subb98/vk-publisher)
+
 Allows send and read SMS and USSD.  
 
 This is a simplified SMPP client lib for sending or receiving smses through [SMPP v3.4](http://www.smsforum.net/SMPP_v3_4_Issue1_2.zip).
