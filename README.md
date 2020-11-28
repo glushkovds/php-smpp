@@ -1,10 +1,10 @@
 PHP implementation SMPP v3.4 protocol
 =============
 
-[![Latest Stable Version](https://poser.pugx.org/glushkovds/php-smpp/v/stable)](https://packagist.org/packages/subb98/vk-publisher)
-[![Total Downloads](https://poser.pugx.org/glushkovds/php-smpp/downloads)](https://packagist.org/packages/subb98/vk-publisher)
-[![Latest Unstable Version](https://poser.pugx.org/glushkovds/php-smpp/v/unstable)](https://packagist.org/packages/subb98/vk-publisher)
-[![License](https://poser.pugx.org/glushkovds/php-smpp/license)](https://packagist.org/packages/subb98/vk-publisher)
+[![Latest Stable Version](https://poser.pugx.org/glushkovds/php-smpp/v/stable)](https://packagist.org/packages/glushkovds/php-smpp)
+[![Total Downloads](https://poser.pugx.org/glushkovds/php-smpp/downloads)](https://packagist.org/packages/glushkovds/php-smpp)
+[![Latest Unstable Version](https://poser.pugx.org/glushkovds/php-smpp/v/unstable)](https://packagist.org/packages/glushkovds/php-smpp)
+[![License](https://poser.pugx.org/glushkovds/php-smpp/license)](https://packagist.org/packages/glushkovds/php-smpp)
 
 Allows send and read SMS and USSD.  
 
