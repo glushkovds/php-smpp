@@ -1,6 +1,8 @@
 PHP implementation SMPP v3.4 protocol
 =============
 
+[![Build Status](https://travis-ci.org/glushkovds/php-smpp.svg?branch=master)](https://travis-ci.org/glushkovds/php-smpp)
+
 Allows send and read SMS and USSD.  
 
 This is a simplified SMPP client lib for sending or receiving smses through [SMPP v3.4](http://www.smsforum.net/SMPP_v3_4_Issue1_2.zip).
