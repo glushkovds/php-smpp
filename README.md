@@ -1,6 +1,7 @@
 PHP implementation SMPP v3.4 protocol
 =============
 
+[![Build Status](https://travis-ci.org/glushkovds/php-smpp.svg?branch=master)](https://travis-ci.org/glushkovds/php-smpp)
 [![Latest Stable Version](https://poser.pugx.org/glushkovds/php-smpp/v/stable)](https://packagist.org/packages/glushkovds/php-smpp)
 [![Total Downloads](https://poser.pugx.org/glushkovds/php-smpp/downloads)](https://packagist.org/packages/glushkovds/php-smpp)
 [![Latest Unstable Version](https://poser.pugx.org/glushkovds/php-smpp/v/unstable)](https://packagist.org/packages/glushkovds/php-smpp)
