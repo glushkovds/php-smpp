@@ -3,7 +3,7 @@
 namespace PhpSmpp\Tests;
 
 use PhpSmpp\Client;
-use PhpSmpp\Pdu\SmppUssd;
+use PhpSmpp\Pdu\Ussd;
 use PhpSmpp\Pdu\Pdu;
 use PhpSmpp\Service\Listener;
 use PhpSmpp\SMPP;
@@ -27,8 +27,9 @@ class ReadUSSDTest extends TestCase
         $transport->enqueueDeliverReceiptSm('deliver_sm_ussd');
 
         $service->listenOnce(function (Pdu $pdu) {
-            /** @var SmppUssd $pdu */
-            $this->assertInstanceOf(SmppUssd::class, $pdu);
+            /** @var Ussd $pdu */
+            $this->assertInstanceOf(Ussd::class, $pdu);
+            $this->assertEquals(SMPP::SERVICE_TYPE_USSD, $pdu->serviceType);
             $this->assertEquals('992000000000', $pdu->source->value);
             $this->assertEquals('992000000001', $pdu->destination->value);
             $this->assertEquals('*3322*0#', $pdu->message);

@@ -2,7 +2,7 @@
 
 namespace PhpSmpp;
 
-use PhpSmpp\Pdu\SmppUssd;
+use PhpSmpp\Pdu\Ussd;
 use PhpSmpp\Pdu\Part\Address;
 use PhpSmpp\Pdu\Part\Tag;
 use PhpSmpp\Pdu\DeliverReceiptSm;
@@ -75,7 +75,7 @@ class PduParser
             if (($esmClass & SMPP::ESM_DELIVER_SMSC_RECEIPT) != 0) {
                 $class = DeliverReceiptSm::class;
             } elseif ($service_type === SMPP::SERVICE_TYPE_USSD) {
-                $class = SmppUssd::class;
+                $class = Ussd::class;
             } else {
                 $class = DeliverSm::class;
             }

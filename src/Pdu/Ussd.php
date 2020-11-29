@@ -2,6 +2,6 @@
 
 namespace PhpSmpp\Pdu;
 
-class SmppUssd extends Sm
+class Ussd extends Sm
 {
 }
