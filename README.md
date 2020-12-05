@@ -83,18 +83,16 @@ To receive a USSD:
 ```php
 require_once 'vendor/autoload.php';
 
-$service = new \PhpSmpp\Service\Listener([], ['smschost.net'], 'login', 'pass');
-$service->listenOnce(function (\PhpSmpp\Pdu\Pdu $pdu) {
+$service = new \PhpSmpp\Service\Listener(['smschost.net'], 'login', 'pass');
+$service->listen(function (\PhpSmpp\Pdu\Pdu $pdu) {
     var_dump($pdu->id);
     var_dump($pdu->sequence);
-    if ($pdu instanceof \PhpSmpp\Pdu\Ussd && $pdu->serviceType === \PhpSmpp\SMPP::SERVICE_TYPE_USSD) {
+    if ($pdu instanceof \PhpSmpp\Pdu\Ussd) {
         var_dump($pdu->status);
         var_dump($pdu->source->value);
         var_dump($pdu->destination->value);
         var_dump($pdu->message);
         // do some job with ussd
-    } else {
-        echo 'not ussd';
     }
 });
 ```
