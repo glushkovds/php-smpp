@@ -2,6 +2,10 @@ PHP implementation SMPP v3.4 protocol
 =============
 
 [![Build Status](https://travis-ci.org/glushkovds/php-smpp.svg?branch=master)](https://travis-ci.org/glushkovds/php-smpp)
+[![Latest Stable Version](https://poser.pugx.org/glushkovds/php-smpp/v/stable)](https://packagist.org/packages/glushkovds/php-smpp)
+[![Total Downloads](https://poser.pugx.org/glushkovds/php-smpp/downloads)](https://packagist.org/packages/glushkovds/php-smpp)
+[![Latest Unstable Version](https://poser.pugx.org/glushkovds/php-smpp/v/unstable)](https://packagist.org/packages/glushkovds/php-smpp)
+[![License](https://poser.pugx.org/glushkovds/php-smpp/license)](https://packagist.org/packages/glushkovds/php-smpp)
 
 Allows send and read SMS and USSD.  
 
@@ -52,14 +56,43 @@ To receive a SMS (or delivery receipt):
 require_once 'vendor/autoload.php';
 
 $service = new \PhpSmpp\Service\Listener(['smschost.net'], 'login', 'pass');
-$service->listen(function (\PhpSmpp\SMPP\Unit\Sm $sm) {
+$service->listen(function (\PhpSmpp\Pdu\Sm $sm) {
     var_dump($sm->msgId);
-    if ($sm instanceof \PhpSmpp\SMPP\Unit\DeliverReceiptSm) {
+    if ($sm instanceof \PhpSmpp\Pdu\DeliverReceiptSm) {
         var_dump($sm->state);
-        var_dump($sm->state == \PhpSmpp\SMPP\SMPP::STATE_DELIVERED);
+        var_dump($sm->state == \PhpSmpp\SMPP::STATE_DELIVERED);
         // do some job with delivery receipt
     } else {
         echo 'not receipt';
+    }
+});
+```
+
+To send a USSD you can do:
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+
+$service = new \PhpSmpp\Service\Sender(['smschost.net'], 'login', 'pass');
+$smsId = $service->sendUSSD(79001001010, 'Hello world!', 'Sender', []);
+```
+
+To receive a USSD:
+
+```php
+require_once 'vendor/autoload.php';
+
+$service = new \PhpSmpp\Service\Listener(['smschost.net'], 'login', 'pass');
+$service->listen(function (\PhpSmpp\Pdu\Pdu $pdu) {
+    var_dump($pdu->id);
+    var_dump($pdu->sequence);
+    if ($pdu instanceof \PhpSmpp\Pdu\Ussd) {
+        var_dump($pdu->status);
+        var_dump($pdu->source->value);
+        var_dump($pdu->destination->value);
+        var_dump($pdu->message);
+        // do some job with ussd
     }
 });
 ```
