@@ -143,6 +143,7 @@ class Client
             }
             $this->transport = new SMPPSocketTransport($hosts, $ports, false, $this->debugHandler);
             $this->transport->setRecvTimeout(10000); // 10 seconds
+            $this->transport->setSendTimeout(10000); // 10 seconds
         }
         return $this->transport;
     }
