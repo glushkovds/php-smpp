@@ -20,7 +20,7 @@ class SMPPSocketTransport extends SocketTransport implements TransportInterface
      */
     public function sendPDU(Pdu $pdu)
     {
-        $length = strlen($pdu->body) + 16;
+        $length = strlen($pdu->body??'') + 16;
         $header = pack("NNNN", $length, $pdu->id, $pdu->status, $pdu->sequence);
         $this->write($header . $pdu->body, $length);
     }
