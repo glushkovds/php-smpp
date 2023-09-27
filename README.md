@@ -26,7 +26,7 @@ Key differences:
 1. Send and listen USSD messages
 1. Object oriented way with Pdu, ShortMessage, Sms and other classes
 1. PSR-1,4,12 support
-1. Requires php7.1+
+1. Requires php7.4+
 1. Phpunit auto tests 
 
 Installation
