@@ -212,9 +212,6 @@ class Client
         $this->sequence_number = 1;
         $this->pdu_queue = [];
 
-        if (!$this->transport->isOpen()) {
-            return;
-        }
         if ($this->debug) {
             call_user_func($this->debugHandler, 'Unbinding...');
         }
@@ -228,7 +225,6 @@ class Client
             if ($this->debug) {
                 call_user_func($this->debugHandler, "Unbind status: thrown error: " . $e->getMessage());
             }
-            // Do nothing
         }
 
         $this->transport->close();
