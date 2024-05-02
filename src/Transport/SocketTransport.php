@@ -273,10 +273,15 @@ class SocketTransport
      */
     public function close()
     {
+        if (!$this->socket instanceof \Socket) {
+            return;
+        }
+
         $arrOpt = array('l_onoff' => 1, 'l_linger' => 1);
         socket_set_block($this->socket);
         socket_set_option($this->socket, SOL_SOCKET, SO_LINGER, $arrOpt);
         socket_close($this->socket);
+        $this->socket = null;
     }
 
     /**
