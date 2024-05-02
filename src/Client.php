@@ -738,7 +738,7 @@ class Client
     protected function sendPDU(Pdu $pdu)
     {
         if ($this->debug) {
-            $length = strlen($pdu->body) + 16;
+            $length = strlen($pdu->body ?? '') + 16;
             $header = pack("NNNN", $length, $pdu->id, $pdu->status, $pdu->sequence);
             call_user_func(
                 $this->debugHandler,
