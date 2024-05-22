@@ -239,7 +239,9 @@ class SocketTransport
                     $r = @socket_connect($socket6, $ip, $port);
                     if ($r) {
                         if ($this->debug) call_user_func($this->debugHandler, "Connected to $ip:$port!");
-                        @socket_close($socket4);
+                        if (!empty($socket4)) {
+                            @socket_close($socket4);
+                        }
                         $this->socket = $socket6;
                         return;
                     } elseif ($this->debug) {
@@ -253,7 +255,9 @@ class SocketTransport
                     $r = @socket_connect($socket4, $ip, $port);
                     if ($r) {
                         if ($this->debug) call_user_func($this->debugHandler, "Connected to $ip:$port!");
-                        @socket_close($socket6);
+                        if (!empty($socket6)) {
+                            @socket_close($socket6);
+                        }
                         $this->socket = $socket4;
                         return;
                     } elseif ($this->debug) {
