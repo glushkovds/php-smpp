@@ -38,7 +38,7 @@ class Client
     const BIND_MODE_TRANSCEIVER = 'transceiver';
 
     // SMPP bind parameters
-    public static $system_type = "WWW";
+    public static $system_type = "smpp";
     public static $interface_version = 0x34;
     public static $addr_ton = 0;
     public static $addr_npi = 0;
@@ -49,7 +49,7 @@ class Client
     public static $sms_esm_class = 0x00;
     public static $sms_protocol_id = 0x00;
     public static $sms_priority_flag = 0x00;
-    public static $sms_registered_delivery_flag = 0x00;
+    public static $sms_registered_delivery_flag = 0x01;
     public static $sms_replace_if_present_flag = 0x00;
     public static $sms_sm_default_msg_id = 0x00;
 
@@ -78,7 +78,7 @@ class Client
      */
     const CSMS_8BIT_UDH = 2;
 
-    public $csmsMethod = self::CSMS_16BIT_TAGS;
+    public $csmsMethod = self::CSMS_8BIT_UDH;
 
     public $debug;
 
@@ -143,7 +143,6 @@ class Client
             }
             $this->transport = new SMPPSocketTransport($hosts, $ports, false, $this->debugHandler);
             $this->transport->setRecvTimeout(10000); // 10 seconds
-            $this->transport->setSendTimeout(10000); // 10 seconds
         }
         return $this->transport;
     }
@@ -212,6 +211,9 @@ class Client
         $this->sequence_number = 1;
         $this->pdu_queue = [];
 
+        if (!$this->transport->isOpen()) {
+            return;
+        }
         if ($this->debug) {
             call_user_func($this->debugHandler, 'Unbinding...');
         }
@@ -225,6 +227,7 @@ class Client
             if ($this->debug) {
                 call_user_func($this->debugHandler, "Unbind status: thrown error: " . $e->getMessage());
             }
+            // Do nothing
         }
 
         $this->transport->close();
@@ -369,7 +372,7 @@ class Client
         $dataCoding = SMPP::DATA_CODING_DEFAULT,
         $priority = 0x00,
         $scheduleDeliveryTime = null,
-        $validityPeriod = null
+        $validityPeriod = '000000100000000R'
     )
     {
         $msg_length = strlen($message);
@@ -415,29 +418,38 @@ class Client
                 );
             } elseif ($this->csmsMethod == Client::CSMS_8BIT_UDH) {
                 $seqnum = 1;
+                $messageIds = [];
                 foreach ($parts as $part) {
                     $udh = pack('cccccc', 5, 0, 3, substr($csmsReference, 1, 1), count($parts), $seqnum);
-                    $res = $this->submit_sm(
+                    $messageId = $this->submit_sm(
                         $from, $to, $udh . $part, $tags, $dataCoding, $priority,
                         $scheduleDeliveryTime, $validityPeriod, (Client::$sms_esm_class | 0x40),
-                        $seqnum == count($parts)
+                        true
                     );
+                    if ($messageId) {
+                        $messageIds[] = $messageId;
+                    }
                     $seqnum++;
                 }
-                return $res;
+                return !empty($messageIds) ? $messageIds : false;
             } else {
                 $sar_msg_ref_num = new Tag(Tag::SAR_MSG_REF_NUM, $csmsReference, 2, 'n');
                 $sar_total_segments = new Tag(Tag::SAR_TOTAL_SEGMENTS, count($parts), 1, 'c');
                 $seqnum = 1;
+                $messageIds = [];
                 foreach ($parts as $part) {
                     $sartags = [$sar_msg_ref_num, $sar_total_segments, new Tag(Tag::SAR_SEGMENT_SEQNUM, $seqnum, 1, 'c')];
-                    $res = $this->submit_sm(
+                    $messageId = $this->submit_sm(
                         $from, $to, $part, (empty($tags) ? $sartags : array_merge($tags, $sartags)),
-                        $dataCoding, $priority, $scheduleDeliveryTime, $validityPeriod
+                        $dataCoding, $priority, $scheduleDeliveryTime, $validityPeriod,
+                        null, true
                     );
+                    if ($messageId) {
+                        $messageIds[] = $messageId;
+                    }
                     $seqnum++;
                 }
-                return $res;
+                return !empty($messageIds) ? $messageIds : false;
             }
         }
 
@@ -502,18 +514,23 @@ class Client
             strlen($short_message) + ($this->nullTerminateOctetstrings ? 1 : 0),//sm_length
             $short_message//short_message
         );
-
+        
         // Add any tags
         if (!empty($tags)) {
             foreach ($tags as $tag) {
                 $pdu .= $tag->getBinary();
             }
-        }
+        }  
 
         $response = $this->sendCommand(SMPP::SUBMIT_SM, $pdu, $needReply);
-        if ($needReply) {
-            $body = unpack("a*msgid", $response->body);
-            return $body['msgid'];
+        
+        if ($needReply && $response) {
+            if ($response->status == SMPP::ESME_ROK) {
+                $body = unpack("a*msgid", $response->body);
+                return $body['msgid'];
+            } else {
+                throw new SmppException(SMPP::getStatusMessage($response->status), $response->status);
+            }
         }
         return null;
     }
@@ -705,6 +722,7 @@ class Client
             return false;
         }
         $pdu = new Pdu($id, 0, $this->sequence_number, $pduBody);
+        
         $this->sendPDU($pdu);
         if ($needReply) {
             $response = $this->readPDU_resp($this->sequence_number, $pdu->id);
@@ -726,6 +744,11 @@ class Client
 
         return $needReply ? $response : null;
     }
+    public function sendDLRCommnd($pdu)
+    {
+        return $this->sendCommand(SMPP::DELIVER_SM, $pdu, true);
+    }
+
 
     /**
      * Prepares and sends PDU to SMSC.
@@ -734,7 +757,7 @@ class Client
     protected function sendPDU(Pdu $pdu)
     {
         if ($this->debug) {
-            $length = strlen($pdu->body ?? '') + 16;
+            $length = strlen($pdu->body) + 16;
             $header = pack("NNNN", $length, $pdu->id, $pdu->status, $pdu->sequence);
             call_user_func(
                 $this->debugHandler,
