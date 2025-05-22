@@ -39,18 +39,34 @@ class DeliverReceiptSm extends DeliverSm
      * @throws \Exception
      */
     protected function parseDate($msgText, $name)
-    {
-        $matches = [];
-        $numMatches = preg_match("/$msgText:(\d{10,12})/si", $this->message, $matches);
-        if ($numMatches == 0) {
-            Logger::debug("Could not parse $msgText: $this->message\n" . bin2hex($this->body));
-            return;
-        }
-        $dp = str_split($matches[1], 2);
-        $dd = gmmktime($dp[3], $dp[4], isset($dp[5]) ? $dp[5] : 0, $dp[1], $dp[2], $dp[0]);
-        $this->{$name} = new \DateTime("@$dd", new \DateTimeZone('UTC'));
+{
+    $matches = [];
+ 
+    $escapedMsgText = preg_quote($msgText, '/');
+    $numMatches = preg_match("/$escapedMsgText:(\d{10,12})/si", $this->message, $matches);
+ 
+    if ($numMatches === 0) {
+        Logger::debug("Could not parse $msgText: $this->message\n" . bin2hex($this->body));
+        return;
     }
-
+ 
+    if (!preg_match('/^\d{10,12}$/', $matches[1])) {
+        Logger::debug("Invalid timestamp match: " . $matches[1]);
+        return;
+    }
+ 
+    $dp = str_split($matches[1], 2);
+ 
+    // Extra guard for array length
+    if (count($dp) < 5) {
+        Logger::debug("Unexpected date parts count: " . json_encode($dp));
+        return;
+    }
+ 
+    $dd = gmmktime((int)$dp[3], (int)$dp[4], isset($dp[5]) ? (int)$dp[5] : 0, (int)$dp[1], (int)$dp[2], (int)$dp[0]);
+ 
+    $this->{$name} = new \DateTime("@$dd", new \DateTimeZone('UTC'));
+}
     protected function parseError()
     {
         $numMatches = preg_match('/err:(\d+)/si', $this->message, $matches);
