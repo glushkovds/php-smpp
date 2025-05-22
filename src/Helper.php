@@ -56,7 +56,14 @@ class Helper
      */
     public static function hasUTFChars($message)
     {
-        return (bool)preg_match('/[А-Яа-яЁё]/u', $message);
+         $gsm7bitChars = "\\\@£\$¥èéùìòÇ\nØø\rÅå?_FG?O??ST?ÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà^{}[~]|";
+        $textlen = mb_strlen($message);
+        for ($i = 0; $i < $textlen; $i++) {
+            if ((strpos($gsm7bitChars, $message[$i]) == false) && ($message[$i] != "\\")) {
+                return false;
+            } //strpos not     able to detect \ in string
+        }
+        return true;
     }
 
 }
